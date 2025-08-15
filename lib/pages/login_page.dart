@@ -9,7 +9,7 @@ class LoginPage extends StatelessWidget {
   final AuthController authController = Get.find<AuthController>();
   final TextEditingController emailController = TextEditingController();
   final TextEditingController passwordController = TextEditingController();
-  final TextEditingController serverController = TextEditingController(text: 'http://120.79.186.102:5396');
+  final TextEditingController serverController = TextEditingController();
 
   @override
   Widget build(BuildContext context) {
