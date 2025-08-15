@@ -9,9 +9,20 @@ class AuthController extends GetxController {
   final RxString errorMessage = ''.obs;
 
   // 登录方法
-  Future<void> login(String email, String password) async {
+  Future<void> login(String email, String password, String serverUrl) async {
     if (email.isEmpty || password.isEmpty) {
       errorMessage.value = '邮箱和密码不能为空';
+      return;
+    }
+
+    if (serverUrl.isEmpty) {
+      errorMessage.value = '服务器地址不能为空';
+      return;
+    }
+
+    // 验证服务器地址格式
+    if (!serverUrl.startsWith('http://') && !serverUrl.startsWith('https://')) {
+      errorMessage.value = '服务器地址必须以http://或https://开头';
       return;
     }
 
@@ -19,6 +30,9 @@ class AuthController extends GetxController {
     errorMessage.value = '';
 
     try {
+      // 更新PocketBase服务器地址
+      _pbService.updateServerUrl(serverUrl);
+      
       final success = await _pbService.adminLogin(email, password);
       isLoading.value = false;
 

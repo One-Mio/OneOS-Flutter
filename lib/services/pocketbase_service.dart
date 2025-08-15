@@ -4,19 +4,64 @@ import 'package:pocketbase/pocketbase.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class PocketBaseService extends GetxService {
-  final PocketBase pb = PocketBase('http://120.79.186.102:5396');
+  late PocketBase pb;
   final RxBool isAuthenticated = false.obs;
   final RxString errorMessage = ''.obs;
 
   // 持久化存储的键
   static const String _tokenKey = 'admin_auth_token';
   static const String _modelKey = 'admin_auth_model';
+  static const String _serverUrlKey = 'server_url';
+  
+  // 默认服务器地址
+  String _currentServerUrl = 'http://120.79.186.102:5396';
   
   Future<PocketBaseService> init() async {
+    // 从持久化存储加载服务器地址
+    await _loadServerUrl();
+    // 初始化PocketBase实例
+    pb = PocketBase(_currentServerUrl);
     // 尝试从持久化存储恢复登录状态
     await _loadAuthFromStorage();
     return this;
   }
+  
+  // 从持久化存储加载服务器地址
+  Future<void> _loadServerUrl() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final savedUrl = prefs.getString(_serverUrlKey);
+      if (savedUrl != null && savedUrl.isNotEmpty) {
+        _currentServerUrl = savedUrl;
+      }
+    } catch (e) {
+      print('加载服务器地址时出错: $e');
+    }
+  }
+  
+  // 保存服务器地址到持久化存储
+  Future<void> _saveServerUrl(String url) async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString(_serverUrlKey, url);
+    } catch (e) {
+      print('保存服务器地址时出错: $e');
+    }
+  }
+  
+  // 更新服务器地址
+  void updateServerUrl(String newUrl) {
+    if (newUrl != _currentServerUrl) {
+      _currentServerUrl = newUrl;
+      pb = PocketBase(_currentServerUrl);
+      _saveServerUrl(newUrl);
+      // 清除之前的认证状态，因为服务器已更改
+      logout();
+    }
+  }
+  
+  // 获取当前服务器地址
+  String get currentServerUrl => _currentServerUrl;
   
   // 从持久化存储加载认证信息
   Future<void> _loadAuthFromStorage() async {

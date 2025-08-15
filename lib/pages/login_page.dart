@@ -9,6 +9,7 @@ class LoginPage extends StatelessWidget {
   final AuthController authController = Get.find<AuthController>();
   final TextEditingController emailController = TextEditingController();
   final TextEditingController passwordController = TextEditingController();
+  final TextEditingController serverController = TextEditingController(text: 'http://120.79.186.102:5396');
 
   @override
   Widget build(BuildContext context) {
@@ -29,6 +30,17 @@ class LoginPage extends StatelessWidget {
               color: Colors.deepPurple,
             ),
             const SizedBox(height: 32),
+            TextField(
+              controller: serverController,
+              decoration: const InputDecoration(
+                labelText: 'PocketBase服务器地址',
+                prefixIcon: Icon(Icons.dns),
+                border: OutlineInputBorder(),
+                hintText: 'http://your-server:port',
+              ),
+              keyboardType: TextInputType.url,
+            ),
+            const SizedBox(height: 16),
             TextField(
               controller: emailController,
               decoration: const InputDecoration(
@@ -56,6 +68,7 @@ class LoginPage extends StatelessWidget {
                       authController.login(
                         emailController.text.trim(),
                         passwordController.text,
+                        serverController.text.trim(),
                       );
                     },
                     style: ElevatedButton.styleFrom(
