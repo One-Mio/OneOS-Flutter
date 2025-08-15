@@ -569,7 +569,7 @@ class _WorkingHoursReportsPageState extends State<WorkingHoursReportsPage>
 
     for (var record in allRecords) {
       totalMinutes += record.dailyWorkingMinutes;
-      // 只统计正数的加班时长
+      // 只统计正数的加班时长（overtimeHours已经是小时单位）
       if (record.overtimeHours > 0) {
         overtimeMinutes += record.overtimeHours;
       }
@@ -591,7 +591,7 @@ class _WorkingHoursReportsPageState extends State<WorkingHoursReportsPage>
       'workDays': allRecords.length,
       'startDate': dates.isNotEmpty ? '${dates.first.year}-${dates.first.month.toString().padLeft(2, '0')}-${dates.first.day.toString().padLeft(2, '0')}' : '暂无数据',
       'lastDate': dates.isNotEmpty ? '${dates.last.year}-${dates.last.month.toString().padLeft(2, '0')}-${dates.last.day.toString().padLeft(2, '0')}' : '暂无数据',
-      'overtimeHours': overtimeMinutes / 60,
+      'overtimeHours': overtimeMinutes,
       'avgDailyHours': (totalMinutes / 60) / allRecords.length,
       'maxDailyHours': maxDailyHours / 60,
        'minDailyHours': minDailyHours == 999999 ? 0.0 : minDailyHours / 60,
