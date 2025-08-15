@@ -91,15 +91,11 @@ class WorkingHoursPage extends StatelessWidget {
       color: Colors.grey.shade50,
       child: Obx(() {
           if (controller.isLoading.value && controller.workingHours.isEmpty) {
-            return const Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  CircularProgressIndicator(),
-                  SizedBox(height: 16),
-                  Text('正在加载工时记录...', style: TextStyle(color: Colors.grey)),
-                ],
-              ),
+            return Column(
+              children: [
+                _buildTotalOvertimePanelSkeleton(),
+                Expanded(child: _buildWorkingHoursListSkeleton()),
+              ],
             );
           }
 
@@ -121,6 +117,85 @@ class WorkingHoursPage extends StatelessWidget {
             ),
           );
         }),
+    );
+  }
+
+  Widget _buildTotalOvertimePanelSkeleton() {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      child: Row(
+        children: [
+          _buildSkeletonCard(1),
+          const SizedBox(width: 16),
+          _buildSkeletonCard(1),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildWorkingHoursListSkeleton() {
+    return ListView.builder(
+      padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
+      itemCount: 5, // 显示5个骨架卡片
+      itemBuilder: (context, index) {
+        return _buildSkeletonCard(0.7 + (index % 3) * 0.1); // 略微不同的动画延迟
+      },
+    );
+  }
+
+  Widget _buildSkeletonCard(double animationDelay) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.grey.shade200,
+            blurRadius: 4,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              _buildShimmerContainer(60, 20),
+              const Spacer(),
+              _buildShimmerContainer(80, 20),
+            ],
+          ),
+          const SizedBox(height: 12),
+          _buildShimmerContainer(double.infinity, 16),
+          const SizedBox(height: 8),
+          _buildShimmerContainer(200, 16),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildShimmerContainer(double width, double height) {
+    return TweenAnimationBuilder(
+      tween: Tween<double>(begin: 0.3, end: 1.0),
+      duration: const Duration(milliseconds: 1000),
+      builder: (context, value, child) {
+        return AnimatedBuilder(
+          animation: AlwaysStoppedAnimation(value),
+          builder: (context, child) {
+            return Container(
+              width: width,
+              height: height,
+              decoration: BoxDecoration(
+                color: Colors.grey.shade300.withOpacity(0.6 + 0.4 * value),
+                borderRadius: BorderRadius.circular(4),
+              ),
+            );
+          },
+        );
+      },
     );
   }
 
@@ -649,29 +724,144 @@ class WorkingHoursPage extends StatelessWidget {
   }
 
   // 构建对话框标题
-  Widget _buildDialogHeader() {
+
+
+  void _showAddWorkingHourDialog(WorkingHourController controller) {
+    Get.bottomSheet(
+      _AddWorkingHourBottomSheet(controller: controller),
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+    );
+  }
+}
+
+// 底部弹出对话框组件
+class _AddWorkingHourBottomSheet extends StatefulWidget {
+  final WorkingHourController controller;
+
+  const _AddWorkingHourBottomSheet({required this.controller});
+
+  @override
+  State<_AddWorkingHourBottomSheet> createState() => _AddWorkingHourBottomSheetState();
+}
+
+class _AddWorkingHourBottomSheetState extends State<_AddWorkingHourBottomSheet> {
+  DateTime selectedDate = DateTime.now();
+  bool isDayShift = true;
+  String workDayType = '正班';
+  final overtimeController = TextEditingController(text: '0');
+  late TextEditingController dateController;
+
+  @override
+  void initState() {
+    super.initState();
+    workDayType = _getDefaultWorkDayType(selectedDate);
+    dateController = TextEditingController(
+      text: '${selectedDate.year}-${selectedDate.month.toString().padLeft(2, '0')}-${selectedDate.day.toString().padLeft(2, '0')}',
+    );
+  }
+
+  @override
+  void dispose() {
+    dateController.dispose();
+    overtimeController.dispose();
+    super.dispose();
+  }
+
+  String _getDefaultWorkDayType(DateTime date) {
+    final weekday = date.weekday;
+    if (weekday == DateTime.saturday || weekday == DateTime.sunday) {
+      return '周末';
+    }
+    return '正班';
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: const BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.only(
+          topLeft: Radius.circular(20),
+          topRight: Radius.circular(20),
+        ),
+      ),
+      child: SafeArea(
+        child: Padding(
+          padding: EdgeInsets.only(
+            left: 20,
+            right: 20,
+            top: 20,
+            bottom: MediaQuery.of(context).viewInsets.bottom + 20,
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              _buildHeader(),
+              const SizedBox(height: 24),
+              _buildDateField(),
+              const SizedBox(height: 20),
+              _buildShiftSelector(),
+              const SizedBox(height: 20),
+              _buildWorkDayTypeSelector(),
+              const SizedBox(height: 20),
+              _buildOvertimeInput(),
+              const SizedBox(height: 30),
+              _buildActionButtons(),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildHeader() {
     return Row(
       children: [
-        Icon(
-          Icons.add_circle_outline,
-          color: Colors.blue.shade600,
-          size: 24,
+        Container(
+          padding: const EdgeInsets.all(8),
+          decoration: BoxDecoration(
+            color: Colors.blue.shade50,
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child: Icon(
+            Icons.access_time,
+            color: Colors.blue.shade600,
+            size: 24,
+          ),
         ),
-        const SizedBox(width: 8),
-        const Text(
-          '添加工时记录',
-          style: TextStyle(
-            fontSize: 20,
-            fontWeight: FontWeight.bold,
+        const SizedBox(width: 12),
+        const Expanded(
+          child: Text(
+            '添加工时记录',
+            style: TextStyle(
+              fontSize: 20,
+              fontWeight: FontWeight.bold,
+              color: Colors.black87,
+            ),
+          ),
+        ),
+        GestureDetector(
+          onTap: () => Get.back(),
+          child: Container(
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: Colors.grey.shade100,
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Icon(
+              Icons.close,
+              color: Colors.grey.shade600,
+              size: 20,
+            ),
           ),
         ),
       ],
     );
   }
 
-  // 构建日期选择字段
-  Widget _buildDateField(TextEditingController dateController, DateTime selectedDate, 
-      WorkingHourController controller, String allDaysOfTheWeek) {
+  Widget _buildDateField() {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -680,38 +870,49 @@ class WorkingHoursPage extends StatelessWidget {
           style: TextStyle(
             fontSize: 16,
             fontWeight: FontWeight.w600,
+            color: Colors.black87,
           ),
         ),
         const SizedBox(height: 8),
-        TextField(
-          controller: dateController,
-          readOnly: true,
-          decoration: InputDecoration(
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(8),
+        GestureDetector(
+          onTap: _selectDate,
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+            decoration: BoxDecoration(
+              border: Border.all(color: Colors.grey.shade300),
+              borderRadius: BorderRadius.circular(12),
+              color: Colors.grey.shade50,
             ),
-            suffixIcon: const Icon(Icons.calendar_today),
-            hintText: '选择工作日期',
+            child: Row(
+              children: [
+                Icon(
+                  Icons.calendar_today,
+                  color: Colors.blue.shade600,
+                  size: 20,
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Text(
+                    dateController.text,
+                    style: const TextStyle(
+                      fontSize: 16,
+                      color: Colors.black87,
+                    ),
+                  ),
+                ),
+                Icon(
+                  Icons.arrow_drop_down,
+                  color: Colors.grey.shade600,
+                ),
+              ],
+            ),
           ),
-          onTap: () async {
-            final pickedDate = await showDatePicker(
-              context: Get.context!,
-              initialDate: selectedDate,
-              firstDate: DateTime(2020),
-              lastDate: DateTime(2030),
-            );
-            if (pickedDate != null) {
-              Get.back();
-              _showAddWorkingHourDialog(controller);
-            }
-          },
         ),
       ],
     );
   }
 
-  // 构建班次选择器
-  Widget _buildShiftSelector(bool isDayShift) {
+  Widget _buildShiftSelector() {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -720,80 +921,67 @@ class WorkingHoursPage extends StatelessWidget {
           style: TextStyle(
             fontSize: 16,
             fontWeight: FontWeight.w600,
+            color: Colors.black87,
           ),
         ),
         const SizedBox(height: 8),
-        StatefulBuilder(
-          builder: (context, setState) {
-            return Row(
-              children: [
-                Expanded(
-                  child: GestureDetector(
-                    onTap: () {
-                      setState(() {
-                        isDayShift = true;
-                      });
-                    },
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
-                      decoration: BoxDecoration(
-                        color: isDayShift ? Colors.blue.shade100 : Colors.grey.shade100,
-                        border: Border.all(
-                          color: isDayShift ? Colors.blue.shade300 : Colors.grey.shade300,
-                          width: 2,
-                        ),
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: Text(
-                        '白班',
-                        textAlign: TextAlign.center,
-                        style: TextStyle(
-                          color: isDayShift ? Colors.blue.shade700 : Colors.grey.shade600,
-                          fontWeight: isDayShift ? FontWeight.bold : FontWeight.normal,
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: GestureDetector(
-                    onTap: () {
-                      setState(() {
-                        isDayShift = false;
-                      });
-                    },
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
-                      decoration: BoxDecoration(
-                        color: !isDayShift ? Colors.orange.shade100 : Colors.grey.shade100,
-                        border: Border.all(
-                          color: !isDayShift ? Colors.orange.shade300 : Colors.grey.shade300,
-                          width: 2,
-                        ),
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: Text(
-                        '夜班',
-                        textAlign: TextAlign.center,
-                        style: TextStyle(
-                          color: !isDayShift ? Colors.orange.shade700 : Colors.grey.shade600,
-                          fontWeight: !isDayShift ? FontWeight.bold : FontWeight.normal,
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
-              ],
-            );
-          },
+        Row(
+          children: [
+            Expanded(
+              child: _buildShiftOption('白班', true, Colors.blue),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: _buildShiftOption('夜班', false, Colors.orange),
+            ),
+          ],
         ),
       ],
     );
   }
 
-  // 构建工作日类型选择器
-  Widget _buildWorkDayTypeSelector(String workDayType) {
+  Widget _buildShiftOption(String title, bool isDay, MaterialColor color) {
+    final isSelected = isDayShift == isDay;
+    return GestureDetector(
+      onTap: () {
+        setState(() {
+          isDayShift = isDay;
+        });
+      },
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 14),
+        decoration: BoxDecoration(
+          color: isSelected ? color.shade50 : Colors.grey.shade50,
+          border: Border.all(
+            color: isSelected ? color.shade300 : Colors.grey.shade300,
+            width: 2,
+          ),
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              isDay ? Icons.wb_sunny : Icons.nightlight_round,
+              color: isSelected ? color.shade700 : Colors.grey.shade600,
+              size: 18,
+            ),
+            const SizedBox(width: 6),
+            Text(
+              title,
+              style: TextStyle(
+                color: isSelected ? color.shade700 : Colors.grey.shade600,
+                fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                fontSize: 15,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildWorkDayTypeSelector() {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -802,110 +990,61 @@ class WorkingHoursPage extends StatelessWidget {
           style: TextStyle(
             fontSize: 16,
             fontWeight: FontWeight.w600,
+            color: Colors.black87,
           ),
         ),
         const SizedBox(height: 8),
-        StatefulBuilder(
-          builder: (context, setState) {
-            return Row(
-              children: [
-                Expanded(
-                  child: GestureDetector(
-                    onTap: () {
-                      setState(() {
-                        workDayType = '正班';
-                      });
-                    },
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
-                      decoration: BoxDecoration(
-                        color: workDayType == '正班' ? Colors.green.shade100 : Colors.grey.shade100,
-                        border: Border.all(
-                          color: workDayType == '正班' ? Colors.green.shade300 : Colors.grey.shade300,
-                          width: 2,
-                        ),
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: Text(
-                        '正班',
-                        textAlign: TextAlign.center,
-                        style: TextStyle(
-                          color: workDayType == '正班' ? Colors.green.shade700 : Colors.grey.shade600,
-                          fontWeight: workDayType == '正班' ? FontWeight.bold : FontWeight.normal,
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: GestureDetector(
-                    onTap: () {
-                      setState(() {
-                        workDayType = '周末';
-                      });
-                    },
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
-                      decoration: BoxDecoration(
-                        color: workDayType == '周末' ? Colors.purple.shade100 : Colors.grey.shade100,
-                        border: Border.all(
-                          color: workDayType == '周末' ? Colors.purple.shade300 : Colors.grey.shade300,
-                          width: 2,
-                        ),
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: Text(
-                        '周末',
-                        textAlign: TextAlign.center,
-                        style: TextStyle(
-                          color: workDayType == '周末' ? Colors.purple.shade700 : Colors.grey.shade600,
-                          fontWeight: workDayType == '周末' ? FontWeight.bold : FontWeight.normal,
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: GestureDetector(
-                    onTap: () {
-                      setState(() {
-                        workDayType = '节假日';
-                      });
-                    },
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
-                      decoration: BoxDecoration(
-                        color: workDayType == '节假日' ? Colors.red.shade100 : Colors.grey.shade100,
-                        border: Border.all(
-                          color: workDayType == '节假日' ? Colors.red.shade300 : Colors.grey.shade300,
-                          width: 2,
-                        ),
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: Text(
-                        '节假日',
-                        textAlign: TextAlign.center,
-                        style: TextStyle(
-                          color: workDayType == '节假日' ? Colors.red.shade700 : Colors.grey.shade600,
-                          fontWeight: workDayType == '节假日' ? FontWeight.bold : FontWeight.normal,
-                          fontSize: 13,
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
-              ],
-            );
-          },
+        Row(
+          children: [
+            Expanded(
+              child: _buildWorkDayTypeOption('正班', Colors.green),
+            ),
+            const SizedBox(width: 8),
+            Expanded(
+              child: _buildWorkDayTypeOption('周末', Colors.purple),
+            ),
+            const SizedBox(width: 8),
+            Expanded(
+              child: _buildWorkDayTypeOption('节假日', Colors.red),
+            ),
+          ],
         ),
       ],
     );
   }
 
-  // 构建加班时长输入框
-  Widget _buildOvertimeInput(TextEditingController controller, Function(String) onChanged) {
+  Widget _buildWorkDayTypeOption(String type, MaterialColor color) {
+    final isSelected = workDayType == type;
+    return GestureDetector(
+      onTap: () {
+        setState(() {
+          workDayType = type;
+        });
+      },
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
+        decoration: BoxDecoration(
+          color: isSelected ? color.shade50 : Colors.grey.shade50,
+          border: Border.all(
+            color: isSelected ? color.shade300 : Colors.grey.shade300,
+            width: 2,
+          ),
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: Text(
+          type,
+          textAlign: TextAlign.center,
+          style: TextStyle(
+            color: isSelected ? color.shade700 : Colors.grey.shade600,
+            fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+            fontSize: type == '节假日' ? 13 : 14,
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildOvertimeInput() {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -914,113 +1053,109 @@ class WorkingHoursPage extends StatelessWidget {
           style: TextStyle(
             fontSize: 16,
             fontWeight: FontWeight.w600,
+            color: Colors.black87,
           ),
         ),
         const SizedBox(height: 8),
-        TextField(
-          controller: controller,
-          keyboardType: TextInputType.number,
-          decoration: InputDecoration(
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(8),
-            ),
-            hintText: '输入加班时长（分钟）',
+        Container(
+          decoration: BoxDecoration(
+            border: Border.all(color: Colors.grey.shade300),
+            borderRadius: BorderRadius.circular(12),
+            color: Colors.white,
           ),
-          onChanged: onChanged,
+          child: TextField(
+            controller: overtimeController,
+            keyboardType: TextInputType.number,
+            decoration: InputDecoration(
+              border: InputBorder.none,
+              contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+              hintText: '输入加班时长（分钟）',
+              hintStyle: TextStyle(color: Colors.grey.shade500),
+              prefixIcon: Icon(
+                Icons.timer,
+                color: Colors.grey.shade600,
+                size: 20,
+              ),
+            ),
+          ),
         ),
       ],
     );
   }
 
-  // 构建对话框按钮
-  Widget _buildDialogButtons(WorkingHourController controller, DateTime selectedDate, 
-      bool isDayShift, TextEditingController overtimeController, String allDaysOfTheWeek) {
+  Widget _buildActionButtons() {
     return Row(
       children: [
         Expanded(
           child: TextButton(
             onPressed: () => Get.back(),
             style: TextButton.styleFrom(
-              padding: const EdgeInsets.symmetric(vertical: 12),
+              padding: const EdgeInsets.symmetric(vertical: 16),
               shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(8),
+                borderRadius: BorderRadius.circular(12),
+                side: BorderSide(color: Colors.grey.shade300),
               ),
             ),
-            child: const Text('取消'),
+            child: Text(
+              '取消',
+              style: TextStyle(
+                color: Colors.grey.shade700,
+                fontSize: 16,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
           ),
         ),
         const SizedBox(width: 12),
         Expanded(
           child: ElevatedButton(
-            onPressed: () async {
-              int overtimeHours = int.tryParse(overtimeController.text) ?? 0;
-              Get.back();
-              await controller.addWorkingHour(
-                workDate: selectedDate,
-                dayShift: isDayShift,
-                overtimeHours: overtimeHours,
-                allDaysOfTheWeek: allDaysOfTheWeek,
-              );
-            },
+            onPressed: _addWorkingHour,
             style: ElevatedButton.styleFrom(
               backgroundColor: Colors.blue.shade600,
               foregroundColor: Colors.white,
-              padding: const EdgeInsets.symmetric(vertical: 12),
+              padding: const EdgeInsets.symmetric(vertical: 16),
               shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(8),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              elevation: 0,
+            ),
+            child: const Text(
+              '添加',
+              style: TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.w600,
               ),
             ),
-            child: const Text('添加'),
           ),
         ),
       ],
     );
   }
 
-  void _showAddWorkingHourDialog(WorkingHourController controller) {
-    DateTime selectedDate = DateTime.now();
-    bool isDayShift = true;
-    int overtimeHours = 0;
-    String allDaysOfTheWeek = _getDefaultWorkDayType(selectedDate);
-    
-    final dateController = TextEditingController(
-      text: '${selectedDate.year}-${selectedDate.month.toString().padLeft(2, '0')}-${selectedDate.day.toString().padLeft(2, '0')}',
+  Future<void> _selectDate() async {
+    final pickedDate = await showDatePicker(
+      context: context,
+      initialDate: selectedDate,
+      firstDate: DateTime(2020),
+      lastDate: DateTime(2030),
     );
-    final overtimeController = TextEditingController(text: '0');
+    if (pickedDate != null) {
+      setState(() {
+        selectedDate = pickedDate;
+        workDayType = _getDefaultWorkDayType(selectedDate);
+        dateController.text = '${selectedDate.year}-${selectedDate.month.toString().padLeft(2, '0')}-${selectedDate.day.toString().padLeft(2, '0')}';
+      });
+    }
+  }
 
-    Get.dialog(
-      Dialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        child: Container(
-          constraints: BoxConstraints(
-            maxHeight: MediaQuery.of(Get.context!).size.height * 0.8,
-          ),
-          child: SingleChildScrollView(
-            child: Padding(
-              padding: const EdgeInsets.all(24),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  _buildDialogHeader(),
-                  const SizedBox(height: 24),
-                  _buildDateField(dateController, selectedDate, controller, allDaysOfTheWeek),
-                  const SizedBox(height: 16),
-                  _buildShiftSelector(isDayShift),
-                  const SizedBox(height: 16),
-                  _buildWorkDayTypeSelector(allDaysOfTheWeek),
-                  const SizedBox(height: 16),
-                  _buildOvertimeInput(overtimeController, (value) {
-                    overtimeHours = int.tryParse(value) ?? 0;
-                  }),
-                  const SizedBox(height: 24),
-                  _buildDialogButtons(controller, selectedDate, isDayShift, overtimeController, allDaysOfTheWeek),
-                ],
-              ),
-            ),
-          ),
-        ),
-      ),
+  Future<void> _addWorkingHour() async {
+    final overtimeHours = int.tryParse(overtimeController.text) ?? 0;
+    Get.back();
+    await widget.controller.addWorkingHour(
+      workDate: selectedDate,
+      dayShift: isDayShift,
+      overtimeHours: overtimeHours,
+      allDaysOfTheWeek: workDayType,
     );
   }
 }

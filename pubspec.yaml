@@ -10,13 +10,15 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
+  flutter_localizations:
+    sdk: flutter
   cupertino_icons: ^1.0.8
   cached_network_image: ^3.3.1
   flutter_screenutil: ^5.9.0
   get: ^4.6.6 # GetX package for state management, routing, and dependency injection
   pocketbase: ^0.23.0
   shared_preferences: ^2.2.2 # 用于持久化存储登录信息
-  intl: ^0.19.0 # 用于日期格式化
+  intl: ^0.20.2 # 用于日期格式化
   device_info_plus: ^10.1.0 # 用于获取设备信息
 
 dev_dependencies:

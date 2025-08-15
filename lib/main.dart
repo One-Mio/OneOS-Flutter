@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:get/get.dart';
 import 'services/pocketbase_service.dart';
 import 'controllers/auth_controller.dart';
@@ -30,6 +31,16 @@ class MyApp extends StatelessWidget {
       ),
       home: const SplashPage(),
       debugShowCheckedModeBanner: false,
+      localizationsDelegates: const [
+        GlobalMaterialLocalizations.delegate,
+        GlobalWidgetsLocalizations.delegate,
+        GlobalCupertinoLocalizations.delegate,
+      ],
+      supportedLocales: const [
+        Locale('zh', 'CN'), // 中文
+        Locale('en', 'US'), // 英文
+      ],
+      locale: const Locale('zh', 'CN'), // 设置默认语言为中文
     );
   }
 }
