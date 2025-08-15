@@ -35,11 +35,10 @@ class _WorkingHoursReportsPageState extends State<WorkingHoursReportsPage>
     return Scaffold(
       backgroundColor: Colors.grey.shade50,
       appBar: AppBar(
-        title: const Text('工时报表'),
         backgroundColor: Colors.blue.shade300,
         foregroundColor: Colors.white,
         elevation: 0,
-        bottom: TabBar(
+        title: TabBar(
           controller: _tabController,
           indicatorColor: Colors.white,
           labelColor: Colors.white,
