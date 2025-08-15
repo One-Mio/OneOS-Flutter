@@ -15,6 +15,7 @@ class _WorkingHoursReportsPageState extends State<WorkingHoursReportsPage>
     with SingleTickerProviderStateMixin {
   late TabController _tabController;
   final WorkingHourController controller = Get.find<WorkingHourController>();
+  DateTime _selectedMonth = DateTime.now();
 
   @override
   void initState() {
@@ -69,15 +70,11 @@ class _WorkingHoursReportsPageState extends State<WorkingHoursReportsPage>
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // 工作天数统计卡片
-            _buildWorkDaysCard(
-              title: '月度工作天数统计',
-              icon: Icons.calendar_today,
-              color: Colors.green,
-              workDaysList: monthlyData['workDays'],
-              labels: monthlyData['workDaysLabels'],
-              isMonthly: true,
-            ),
+            // 月份选择器
+            _buildMonthSelector(),
+            const SizedBox(height: 16),
+            // 当月工作天数统计卡片
+            _buildCurrentMonthWorkDaysCard(),
             const SizedBox(height: 16),
             _buildReportCard(
               title: '月度工时统计',
@@ -777,5 +774,258 @@ class _WorkingHoursReportsPageState extends State<WorkingHoursReportsPage>
         ),
       ],
     );
+  }
+
+  // 月份选择器
+  Widget _buildMonthSelector() {
+    return Card(
+      elevation: 2,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Row(
+          children: [
+            Icon(Icons.date_range, color: Colors.blue.shade600),
+            const SizedBox(width: 12),
+            const Text(
+              '选择月份：',
+              style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
+            ),
+            const Spacer(),
+            InkWell(
+              onTap: () => _showMonthPicker(),
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                decoration: BoxDecoration(
+                  color: Colors.blue.shade50,
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: Colors.blue.shade200),
+                ),
+                child: Text(
+                  '${_selectedMonth.year}年${_selectedMonth.month.toString().padLeft(2, '0')}月',
+                  style: TextStyle(
+                    color: Colors.blue.shade700,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  // 当月工作天数统计卡片
+  Widget _buildCurrentMonthWorkDaysCard() {
+    final currentMonthData = _getCurrentMonthData();
+    final workDays = currentMonthData['workDays'] as int;
+    final totalDays = currentMonthData['totalDays'] as int;
+    final restDays = totalDays - workDays;
+
+    return Card(
+      elevation: 2,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Icon(Icons.calendar_today, color: Colors.green.shade600),
+                const SizedBox(width: 8),
+                Text(
+                  '${_selectedMonth.year}年${_selectedMonth.month.toString().padLeft(2, '0')}月工作天数统计',
+                  style: const TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 16),
+            Row(
+              children: [
+                Expanded(
+                  child: Container(
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: Colors.green.shade50,
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(color: Colors.green.shade200),
+                    ),
+                    child: Column(
+                      children: [
+                        Icon(
+                          Icons.work,
+                          size: 32,
+                          color: Colors.green.shade600,
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          '$workDays',
+                          style: TextStyle(
+                            fontSize: 24,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.green.shade700,
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          '工作天数',
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: Colors.green.shade600,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 16),
+                Expanded(
+                  child: Container(
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: Colors.orange.shade50,
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(color: Colors.orange.shade200),
+                    ),
+                    child: Column(
+                      children: [
+                        Icon(
+                          Icons.weekend,
+                          size: 32,
+                          color: Colors.orange.shade600,
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          '$restDays',
+                          style: TextStyle(
+                            fontSize: 24,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.orange.shade700,
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          '休息天数',
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: Colors.orange.shade600,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  // 显示月份选择器
+  void _showMonthPicker() {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('选择月份'),
+          content: SizedBox(
+            width: 300,
+            height: 300,
+            child: YearPicker(
+              firstDate: DateTime(2020),
+              lastDate: DateTime.now(),
+              selectedDate: _selectedMonth,
+              onChanged: (DateTime dateTime) {
+                Navigator.pop(context);
+                _showMonthPickerForYear(dateTime.year);
+              },
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  // 显示指定年份的月份选择器
+  void _showMonthPickerForYear(int year) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Text('选择${year}年的月份'),
+          content: SizedBox(
+            width: 300,
+            height: 200,
+            child: GridView.builder(
+              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                crossAxisCount: 3,
+                childAspectRatio: 2,
+              ),
+              itemCount: 12,
+              itemBuilder: (context, index) {
+                final month = index + 1;
+                final isSelected = _selectedMonth.year == year && _selectedMonth.month == month;
+                return InkWell(
+                  onTap: () {
+                    setState(() {
+                      _selectedMonth = DateTime(year, month);
+                    });
+                    Navigator.pop(context);
+                  },
+                  child: Container(
+                    margin: const EdgeInsets.all(4),
+                    decoration: BoxDecoration(
+                      color: isSelected ? Colors.blue.shade100 : Colors.grey.shade100,
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(
+                        color: isSelected ? Colors.blue.shade300 : Colors.grey.shade300,
+                      ),
+                    ),
+                    child: Center(
+                      child: Text(
+                        '${month}月',
+                        style: TextStyle(
+                          color: isSelected ? Colors.blue.shade700 : Colors.black87,
+                          fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                        ),
+                      ),
+                    ),
+                  ),
+                );
+              },
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  // 获取当前选中月份的数据
+  Map<String, dynamic> _getCurrentMonthData() {
+    final selectedMonthKey = '${_selectedMonth.year}-${_selectedMonth.month.toString().padLeft(2, '0')}';
+    
+    // 计算当月总天数
+    final totalDays = DateTime(_selectedMonth.year, _selectedMonth.month + 1, 0).day;
+    
+    // 查找当月的工时记录
+    int workDays = 0;
+    for (final record in controller.workingHours) {
+      final recordDate = DateTime.parse(record.date);
+      if (recordDate.year == _selectedMonth.year && recordDate.month == _selectedMonth.month) {
+        workDays++;
+      }
+    }
+    
+    return {
+      'workDays': workDays,
+      'totalDays': totalDays,
+    };
   }
 }
