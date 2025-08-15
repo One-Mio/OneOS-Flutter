@@ -1013,14 +1013,27 @@ class _WorkingHoursReportsPageState extends State<WorkingHoursReportsPage>
       // 计算当月总天数
       final totalDays = DateTime(_selectedMonth.year, _selectedMonth.month + 1, 0).day;
       
-      // 查找当月的工时记录
+      // 查找当月的工时记录并按新逻辑计算工作天数
       int workDays = 0;
       if (controller.workingHours.isNotEmpty) {
         for (final record in controller.workingHours) {
           try {
             final recordDate = DateTime.parse(record.date);
             if (recordDate.year == _selectedMonth.year && recordDate.month == _selectedMonth.month) {
-              workDays++;
+              // 新的工作天数计算逻辑
+              bool isWorkDay = false;
+              
+              if (record.allDaysOfTheWeek == '周末' || record.allDaysOfTheWeek == '节假日') {
+                // 若all_days_of_the_week字段是周末或节假日，overtime_hours大于0，则当天计算为工作
+                isWorkDay = record.overtimeHours > 0;
+              } else {
+                // 若all_days_of_the_week为正班，overtime_hours大于等于0则计算为工作
+                isWorkDay = record.overtimeHours >= 0;
+              }
+              
+              if (isWorkDay) {
+                workDays++;
+              }
             }
           } catch (e) {
             // 忽略日期解析错误的记录
