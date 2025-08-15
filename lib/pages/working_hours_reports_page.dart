@@ -819,8 +819,8 @@ class _WorkingHoursReportsPageState extends State<WorkingHoursReportsPage>
   // 当月工作天数统计卡片
   Widget _buildCurrentMonthWorkDaysCard() {
     final currentMonthData = _getCurrentMonthData();
-    final workDays = currentMonthData['workDays'] as int;
-    final totalDays = currentMonthData['totalDays'] as int;
+    final workDays = currentMonthData['workDays'] ?? 0;
+    final totalDays = currentMonthData['totalDays'] ?? 30;
     final restDays = totalDays - workDays;
 
     return Card(
@@ -1009,23 +1009,36 @@ class _WorkingHoursReportsPageState extends State<WorkingHoursReportsPage>
 
   // 获取当前选中月份的数据
   Map<String, dynamic> _getCurrentMonthData() {
-    final selectedMonthKey = '${_selectedMonth.year}-${_selectedMonth.month.toString().padLeft(2, '0')}';
-    
-    // 计算当月总天数
-    final totalDays = DateTime(_selectedMonth.year, _selectedMonth.month + 1, 0).day;
-    
-    // 查找当月的工时记录
-    int workDays = 0;
-    for (final record in controller.workingHours) {
-      final recordDate = DateTime.parse(record.date);
-      if (recordDate.year == _selectedMonth.year && recordDate.month == _selectedMonth.month) {
-        workDays++;
+    try {
+      // 计算当月总天数
+      final totalDays = DateTime(_selectedMonth.year, _selectedMonth.month + 1, 0).day;
+      
+      // 查找当月的工时记录
+      int workDays = 0;
+      if (controller.workingHours.isNotEmpty) {
+        for (final record in controller.workingHours) {
+          try {
+            final recordDate = DateTime.parse(record.date);
+            if (recordDate.year == _selectedMonth.year && recordDate.month == _selectedMonth.month) {
+              workDays++;
+            }
+          } catch (e) {
+            // 忽略日期解析错误的记录
+            continue;
+          }
+        }
       }
+      
+      return {
+        'workDays': workDays,
+        'totalDays': totalDays,
+      };
+    } catch (e) {
+      // 发生错误时返回默认值
+      return {
+        'workDays': 0,
+        'totalDays': 30,
+      };
     }
-    
-    return {
-      'workDays': workDays,
-      'totalDays': totalDays,
-    };
   }
 }
