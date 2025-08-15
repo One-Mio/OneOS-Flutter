@@ -73,6 +73,18 @@ class _WorkingHoursReportsPageState extends State<WorkingHoursReportsPage>
               icon: Icons.bar_chart,
               color: Colors.blue,
               children: [
+                // 图例
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      _buildLegendItem('正常工时', Colors.green),
+                      const SizedBox(width: 20),
+                      _buildLegendItem('加班工时', Colors.orange),
+                    ],
+                  ),
+                ),
                 Container(
                   height: 300,
                   padding: const EdgeInsets.all(16),
@@ -84,12 +96,16 @@ class _WorkingHoursReportsPageState extends State<WorkingHoursReportsPage>
                         touchTooltipData: BarTouchTooltipData(
                           getTooltipColor: (group) => Colors.blueGrey,
                           getTooltipItem: (group, groupIndex, rod, rodIndex) {
-                            String month = monthlyData['months'][groupIndex];
-                            return BarTooltipItem(
-                              '$month\n${rod.toY.toStringAsFixed(1)}小时',
-                              const TextStyle(color: Colors.white),
-                            );
-                          },
+                          String month = monthlyData['months'][groupIndex];
+                          double totalHours = rod.toY;
+                          double overtimeHours = rod.rodStackItems.isNotEmpty ? 
+                            rod.rodStackItems.last.toY - rod.rodStackItems.last.fromY : 0;
+                          double normalHours = totalHours - overtimeHours;
+                          return BarTooltipItem(
+                            '$month\n总工时: ${totalHours.toStringAsFixed(1)}小时\n正常: ${normalHours.toStringAsFixed(1)}小时\n加班: ${overtimeHours.toStringAsFixed(1)}小时',
+                            const TextStyle(color: Colors.white, fontSize: 12),
+                          );
+                        },
                         ),
                       ),
                       titlesData: FlTitlesData(
@@ -153,6 +169,18 @@ class _WorkingHoursReportsPageState extends State<WorkingHoursReportsPage>
               icon: Icons.bar_chart,
               color: Colors.purple,
               children: [
+                // 图例
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      _buildLegendItem('正常工时', Colors.green),
+                      const SizedBox(width: 20),
+                      _buildLegendItem('加班工时', Colors.orange),
+                    ],
+                  ),
+                ),
                 Container(
                   height: 300,
                   padding: const EdgeInsets.all(16),
@@ -164,12 +192,16 @@ class _WorkingHoursReportsPageState extends State<WorkingHoursReportsPage>
                         touchTooltipData: BarTouchTooltipData(
                           getTooltipColor: (group) => Colors.purple,
                           getTooltipItem: (group, groupIndex, rod, rodIndex) {
-                            String year = yearlyData['years'][groupIndex];
-                            return BarTooltipItem(
-                              '$year年\n${rod.toY.toStringAsFixed(1)}小时',
-                              const TextStyle(color: Colors.white),
-                            );
-                          },
+                          String year = yearlyData['years'][groupIndex];
+                          double totalHours = rod.toY;
+                          double overtimeHours = rod.rodStackItems.isNotEmpty ? 
+                            rod.rodStackItems.last.toY - rod.rodStackItems.last.fromY : 0;
+                          double normalHours = totalHours - overtimeHours;
+                          return BarTooltipItem(
+                            '$year年\n总工时: ${totalHours.toStringAsFixed(1)}小时\n正常: ${normalHours.toStringAsFixed(1)}小时\n加班: ${overtimeHours.toStringAsFixed(1)}小时',
+                            const TextStyle(color: Colors.white, fontSize: 12),
+                          );
+                        },
                         ),
                       ),
                       titlesData: FlTitlesData(
@@ -336,20 +368,50 @@ class _WorkingHoursReportsPageState extends State<WorkingHoursReportsPage>
     );
   }
 
+  Widget _buildLegendItem(String label, Color color) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Container(
+          width: 12,
+          height: 12,
+          decoration: BoxDecoration(
+            color: color,
+            borderRadius: BorderRadius.circular(2),
+          ),
+        ),
+        const SizedBox(width: 6),
+        Text(
+          label,
+          style: const TextStyle(
+            fontSize: 12,
+            color: Colors.grey,
+          ),
+        ),
+      ],
+    );
+  }
+
 
 
   Map<String, dynamic> _getMonthlyChartData() {
     // 获取所有记录并按月份分组
-    Map<String, int> monthlyMinutes = {};
+    Map<String, Map<String, int>> monthlyData = {};
     
     for (var record in controller.workingHours) {
       final recordDate = DateTime.parse(record.date);
       final monthKey = '${recordDate.year}-${recordDate.month.toString().padLeft(2, '0')}';
-      monthlyMinutes[monthKey] = (monthlyMinutes[monthKey] ?? 0) + record.dailyWorkingMinutes;
+      
+      if (!monthlyData.containsKey(monthKey)) {
+        monthlyData[monthKey] = {'total': 0, 'overtime': 0};
+      }
+      
+      monthlyData[monthKey]!['total'] = (monthlyData[monthKey]!['total'] ?? 0) + record.dailyWorkingMinutes;
+      monthlyData[monthKey]!['overtime'] = (monthlyData[monthKey]!['overtime'] ?? 0) + (record.overtimeHours > 0 ? record.overtimeHours : 0);
     }
 
     // 按时间排序并取最近12个月
-    final sortedEntries = monthlyMinutes.entries.toList()
+    final sortedEntries = monthlyData.entries.toList()
       ..sort((a, b) => a.key.compareTo(b.key));
     
     final recentEntries = sortedEntries.length > 12 
@@ -367,8 +429,11 @@ class _WorkingHoursReportsPageState extends State<WorkingHoursReportsPage>
       final month = parts[1];
       final monthName = '${year.substring(2)}年${month}月';
       
-      final hours = entry.value / 60.0;
-      if (hours > maxY) maxY = hours;
+      final totalHours = entry.value['total']! / 60.0;
+      final overtimeHours = entry.value['overtime']! / 60.0;
+      final normalHours = totalHours - overtimeHours;
+      
+      if (totalHours > maxY) maxY = totalHours;
       
       months.add(monthName);
       barGroups.add(
@@ -376,9 +441,13 @@ class _WorkingHoursReportsPageState extends State<WorkingHoursReportsPage>
           x: i,
           barRods: [
             BarChartRodData(
-              toY: hours,
+              toY: totalHours,
               color: Colors.blue,
               width: 16,
+              rodStackItems: [
+                BarChartRodStackItem(0, normalHours, Colors.green),
+                BarChartRodStackItem(normalHours, totalHours, Colors.orange),
+              ],
               borderRadius: const BorderRadius.only(
                 topLeft: Radius.circular(4),
                 topRight: Radius.circular(4),
@@ -398,16 +467,22 @@ class _WorkingHoursReportsPageState extends State<WorkingHoursReportsPage>
 
   Map<String, dynamic> _getYearlyChartData() {
     // 获取所有记录并按年份分组
-    Map<String, int> yearlyMinutes = {};
+    Map<String, Map<String, int>> yearlyData = {};
     
     for (var record in controller.workingHours) {
       final recordDate = DateTime.parse(record.date);
       final yearKey = recordDate.year.toString();
-      yearlyMinutes[yearKey] = (yearlyMinutes[yearKey] ?? 0) + record.dailyWorkingMinutes;
+      
+      if (!yearlyData.containsKey(yearKey)) {
+        yearlyData[yearKey] = {'total': 0, 'overtime': 0};
+      }
+      
+      yearlyData[yearKey]!['total'] = (yearlyData[yearKey]!['total'] ?? 0) + record.dailyWorkingMinutes;
+      yearlyData[yearKey]!['overtime'] = (yearlyData[yearKey]!['overtime'] ?? 0) + (record.overtimeHours > 0 ? record.overtimeHours : 0);
     }
 
     // 按时间排序
-    final sortedEntries = yearlyMinutes.entries.toList()
+    final sortedEntries = yearlyData.entries.toList()
       ..sort((a, b) => a.key.compareTo(b.key));
 
     List<String> years = [];
@@ -417,9 +492,11 @@ class _WorkingHoursReportsPageState extends State<WorkingHoursReportsPage>
     for (int i = 0; i < sortedEntries.length; i++) {
       final entry = sortedEntries[i];
       final year = entry.key;
-      final hours = entry.value / 60.0;
+      final totalHours = entry.value['total']! / 60.0;
+      final overtimeHours = entry.value['overtime']! / 60.0;
+      final normalHours = totalHours - overtimeHours;
       
-      if (hours > maxY) maxY = hours;
+      if (totalHours > maxY) maxY = totalHours;
       
       years.add(year);
       barGroups.add(
@@ -427,9 +504,13 @@ class _WorkingHoursReportsPageState extends State<WorkingHoursReportsPage>
           x: i,
           barRods: [
             BarChartRodData(
-              toY: hours,
+              toY: totalHours,
               color: Colors.purple,
               width: 20,
+              rodStackItems: [
+                BarChartRodStackItem(0, normalHours, Colors.green),
+                BarChartRodStackItem(normalHours, totalHours, Colors.orange),
+              ],
               borderRadius: const BorderRadius.only(
                 topLeft: Radius.circular(4),
                 topRight: Radius.circular(4),
