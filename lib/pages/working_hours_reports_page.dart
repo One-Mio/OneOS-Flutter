@@ -408,23 +408,12 @@ class _WorkingHoursReportsPageState extends State<WorkingHoursReportsPage>
         monthlyData[monthKey] = {'normal': 0.0, 'overtime': 0.0};
       }
       
-      // 根据工作日类型计算正常工时和加班工时
-      bool isWeekendOrHoliday = (record.allDaysOfTheWeek == '周末' || record.allDaysOfTheWeek == '节假日');
-      double normalHours = 0.0;
-      double overtimeHours = 0.0;
+      // 直接计算每月加班工时的和
+      double overtimeHours = record.overtimeHours / 60.0; // 转换为小时
+      double normalHours = (record.dailyWorkingMinutes - record.overtimeHours) / 60.0; // 正常工时 = 总工时 - 加班工时
       
-      if (record.overtimeHours >= 0) {
-        if (isWeekendOrHoliday) {
-          // 周末/节假日：正常工时=0，加班工时=overtimeHours
-          normalHours = 0.0;
-          overtimeHours = record.overtimeHours / 60.0;
-        } else {
-          // 正班日：正常工时=8小时，加班工时=overtimeHours
-          normalHours = 8.0;
-          overtimeHours = record.overtimeHours / 60.0;
-        }
-      }
-      // 如果overtimeHours为负数，则该天工时为0（已在dailyWorkingMinutes中处理）
+      // 确保正常工时不为负数
+      if (normalHours < 0) normalHours = 0.0;
       
       monthlyData[monthKey]!['normal'] = monthlyData[monthKey]!['normal']! + normalHours;
       monthlyData[monthKey]!['overtime'] = monthlyData[monthKey]!['overtime']! + overtimeHours;
@@ -497,26 +486,15 @@ class _WorkingHoursReportsPageState extends State<WorkingHoursReportsPage>
         yearlyData[yearKey] = {'normal': 0.0, 'overtime': 0.0};
       }
       
-      // 根据工作日类型计算正常工时和加班工时
-      bool isWeekendOrHoliday = (record.allDaysOfTheWeek == '周末' || record.allDaysOfTheWeek == '节假日');
-      double normalHours = 0.0;
-      double overtimeHours = 0.0;
-      
-      if (record.overtimeHours >= 0) {
-        if (isWeekendOrHoliday) {
-          // 周末/节假日：正常工时=0，加班工时=overtimeHours
-          normalHours = 0.0;
-          overtimeHours = record.overtimeHours / 60.0;
-        } else {
-          // 正班日：正常工时=8小时，加班工时=overtimeHours
-          normalHours = 8.0;
-          overtimeHours = record.overtimeHours / 60.0;
-        }
-      }
-      // 如果overtimeHours为负数，则该天工时为0（已在dailyWorkingMinutes中处理）
-      
-      yearlyData[yearKey]!['normal'] = yearlyData[yearKey]!['normal']! + normalHours;
-      yearlyData[yearKey]!['overtime'] = yearlyData[yearKey]!['overtime']! + overtimeHours;
+      // 直接计算每年加班工时的和
+       double overtimeHours = record.overtimeHours / 60.0; // 转换为小时
+       double normalHours = (record.dailyWorkingMinutes - record.overtimeHours) / 60.0; // 正常工时 = 总工时 - 加班工时
+       
+       // 确保正常工时不为负数
+       if (normalHours < 0) normalHours = 0.0;
+       
+       yearlyData[yearKey]!['normal'] = yearlyData[yearKey]!['normal']! + normalHours;
+       yearlyData[yearKey]!['overtime'] = yearlyData[yearKey]!['overtime']! + overtimeHours;
     }
 
     // 按时间排序
