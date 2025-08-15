@@ -209,4 +209,34 @@ class WorkingHourController extends GetxController {
       isLoading.value = false;
     }
   }
+
+  // 获取所有历史工时记录（用于报表）
+  var allWorkingHours = <WorkingHourModel>[].obs;
+  
+  Future<void> fetchAllWorkingHours() async {
+    try {
+      // 检查登录状态
+      if (!_pocketBaseService.isLoggedIn) {
+        return;
+      }
+      
+      // 调用API获取所有数据
+      final response = await _pocketBaseService.pb.collection('working_hours').getList(
+        page: 1,
+        perPage: 500, // 获取更多记录
+        sort: '-date', // 按日期降序排序
+      );
+      
+      // 清空现有数据
+      allWorkingHours.clear();
+      
+      // 解析并添加新数据
+      for (var item in response.items) {
+        final workingHour = WorkingHourModel.fromJson(item.toJson());
+        allWorkingHours.add(workingHour);
+      }
+    } catch (e) {
+      print('获取所有工时记录失败: $e');
+    }
+  }
 }

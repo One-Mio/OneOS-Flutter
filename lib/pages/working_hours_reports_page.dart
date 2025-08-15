@@ -20,6 +20,8 @@ class _WorkingHoursReportsPageState extends State<WorkingHoursReportsPage>
   void initState() {
     super.initState();
     _tabController = TabController(length: 3, vsync: this);
+    // 获取所有历史工时数据用于报表
+    controller.fetchAllWorkingHours();
   }
 
   @override
@@ -398,7 +400,7 @@ class _WorkingHoursReportsPageState extends State<WorkingHoursReportsPage>
     // 获取所有记录并按月份分组
     Map<String, Map<String, int>> monthlyData = {};
     
-    for (var record in controller.workingHours) {
+    for (var record in controller.allWorkingHours) {
       final recordDate = DateTime.parse(record.date);
       final monthKey = '${recordDate.year}-${recordDate.month.toString().padLeft(2, '0')}';
       
@@ -469,7 +471,7 @@ class _WorkingHoursReportsPageState extends State<WorkingHoursReportsPage>
     // 获取所有记录并按年份分组
     Map<String, Map<String, int>> yearlyData = {};
     
-    for (var record in controller.workingHours) {
+    for (var record in controller.allWorkingHours) {
       final recordDate = DateTime.parse(record.date);
       final yearKey = recordDate.year.toString();
       
@@ -529,7 +531,7 @@ class _WorkingHoursReportsPageState extends State<WorkingHoursReportsPage>
   }
 
   Map<String, dynamic> _getTotalReportData() {
-    final allRecords = controller.workingHours;
+    final allRecords = controller.allWorkingHours;
 
     if (allRecords.isEmpty) {
       return {
