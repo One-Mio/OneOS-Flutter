@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:fl_chart/fl_chart.dart';
 import '../controllers/working_hour_controller.dart';
 import '../models/working_hour_model.dart';
 
@@ -61,39 +62,76 @@ class _WorkingHoursReportsPageState extends State<WorkingHoursReportsPage>
 
   Widget _buildMonthlyReport() {
     return Obx(() {
-      final monthlyData = _getMonthlyReportData();
+      final monthlyData = _getMonthlyChartData();
       return SingleChildScrollView(
         padding: const EdgeInsets.all(16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             _buildReportCard(
-              title: '本月工时统计',
-              icon: Icons.calendar_month,
+              title: '月度工时统计',
+              icon: Icons.bar_chart,
               color: Colors.blue,
               children: [
-                _buildStatItem('总工时', '${monthlyData['totalHours']?.toStringAsFixed(1) ?? '0.0'} 小时'),
-                _buildStatItem('工作天数', '${monthlyData['workDays'] ?? 0} 天'),
-                _buildStatItem('平均每日工时', '${monthlyData['avgHours']?.toStringAsFixed(1) ?? '0.0'} 小时'),
-                _buildStatItem('加班时长', '${((monthlyData['overtimeHours'] ?? 0) / 60).toStringAsFixed(1)} 小时'),
-              ],
-            ),
-            const SizedBox(height: 16),
-            _buildReportCard(
-              title: '班次分布',
-              icon: Icons.schedule,
-              color: Colors.green,
-              children: [
-                ..._buildShiftDistribution(monthlyData['shiftDistribution'] ?? {}),
-              ],
-            ),
-            const SizedBox(height: 16),
-            _buildReportCard(
-              title: '工作日类型分布',
-              icon: Icons.work,
-              color: Colors.orange,
-              children: [
-                ..._buildWorkDayTypeDistribution(monthlyData['workDayTypeDistribution'] ?? {}),
+                Container(
+                  height: 300,
+                  padding: const EdgeInsets.all(16),
+                  child: BarChart(
+                    BarChartData(
+                      alignment: BarChartAlignment.spaceAround,
+                      maxY: monthlyData['maxY'],
+                      barTouchData: BarTouchData(
+                        touchTooltipData: BarTouchTooltipData(
+                          getTooltipColor: (group) => Colors.blueGrey,
+                          getTooltipItem: (group, groupIndex, rod, rodIndex) {
+                            String month = monthlyData['months'][groupIndex];
+                            return BarTooltipItem(
+                              '$month\n${rod.toY.toStringAsFixed(1)}小时',
+                              const TextStyle(color: Colors.white),
+                            );
+                          },
+                        ),
+                      ),
+                      titlesData: FlTitlesData(
+                        show: true,
+                        rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                        topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                        bottomTitles: AxisTitles(
+                          sideTitles: SideTitles(
+                            showTitles: true,
+                            getTitlesWidget: (value, meta) {
+                              final months = monthlyData['months'] as List<String>;
+                              if (value.toInt() >= 0 && value.toInt() < months.length) {
+                                return Padding(
+                                  padding: const EdgeInsets.only(top: 8.0),
+                                  child: Text(
+                                    months[value.toInt()],
+                                    style: const TextStyle(fontSize: 12),
+                                  ),
+                                );
+                              }
+                              return const Text('');
+                            },
+                          ),
+                        ),
+                        leftTitles: AxisTitles(
+                          sideTitles: SideTitles(
+                            showTitles: true,
+                            reservedSize: 40,
+                            getTitlesWidget: (value, meta) {
+                              return Text(
+                                '${value.toInt()}h',
+                                style: const TextStyle(fontSize: 10),
+                              );
+                            },
+                          ),
+                        ),
+                      ),
+                      borderData: FlBorderData(show: false),
+                      barGroups: monthlyData['barGroups'],
+                    ),
+                  ),
+                ),
               ],
             ),
           ],
@@ -104,30 +142,76 @@ class _WorkingHoursReportsPageState extends State<WorkingHoursReportsPage>
 
   Widget _buildYearlyReport() {
     return Obx(() {
-      final yearlyData = _getYearlyReportData();
+      final yearlyData = _getYearlyChartData();
       return SingleChildScrollView(
         padding: const EdgeInsets.all(16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             _buildReportCard(
-              title: '${DateTime.now().year}年工时统计',
-              icon: Icons.calendar_today,
+              title: '年度工时统计',
+              icon: Icons.bar_chart,
               color: Colors.purple,
               children: [
-                _buildStatItem('总工时', '${yearlyData['totalHours']?.toStringAsFixed(1) ?? '0.0'} 小时'),
-                _buildStatItem('工作天数', '${yearlyData['workDays'] ?? 0} 天'),
-                _buildStatItem('平均每月工时', '${yearlyData['avgMonthlyHours']?.toStringAsFixed(1) ?? '0.0'} 小时'),
-                _buildStatItem('总加班时长', '${((yearlyData['overtimeHours'] ?? 0) / 60).toStringAsFixed(1)} 小时'),
-              ],
-            ),
-            const SizedBox(height: 16),
-            _buildReportCard(
-              title: '月度工时趋势',
-              icon: Icons.trending_up,
-              color: Colors.indigo,
-              children: [
-                ..._buildMonthlyTrend(yearlyData['monthlyTrend'] ?? {}),
+                Container(
+                  height: 300,
+                  padding: const EdgeInsets.all(16),
+                  child: BarChart(
+                    BarChartData(
+                      alignment: BarChartAlignment.spaceAround,
+                      maxY: yearlyData['maxY'],
+                      barTouchData: BarTouchData(
+                        touchTooltipData: BarTouchTooltipData(
+                          getTooltipColor: (group) => Colors.purple,
+                          getTooltipItem: (group, groupIndex, rod, rodIndex) {
+                            String year = yearlyData['years'][groupIndex];
+                            return BarTooltipItem(
+                              '$year年\n${rod.toY.toStringAsFixed(1)}小时',
+                              const TextStyle(color: Colors.white),
+                            );
+                          },
+                        ),
+                      ),
+                      titlesData: FlTitlesData(
+                        show: true,
+                        rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                        topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                        bottomTitles: AxisTitles(
+                          sideTitles: SideTitles(
+                            showTitles: true,
+                            getTitlesWidget: (value, meta) {
+                              final years = yearlyData['years'] as List<String>;
+                              if (value.toInt() >= 0 && value.toInt() < years.length) {
+                                return Padding(
+                                  padding: const EdgeInsets.only(top: 8.0),
+                                  child: Text(
+                                    years[value.toInt()],
+                                    style: const TextStyle(fontSize: 12),
+                                  ),
+                                );
+                              }
+                              return const Text('');
+                            },
+                          ),
+                        ),
+                        leftTitles: AxisTitles(
+                          sideTitles: SideTitles(
+                            showTitles: true,
+                            reservedSize: 40,
+                            getTitlesWidget: (value, meta) {
+                              return Text(
+                                '${value.toInt()}h',
+                                style: const TextStyle(fontSize: 10),
+                              );
+                            },
+                          ),
+                        ),
+                      ),
+                      borderData: FlBorderData(show: false),
+                      barGroups: yearlyData['barGroups'],
+                    ),
+                  ),
+                ),
               ],
             ),
           ],
@@ -252,116 +336,114 @@ class _WorkingHoursReportsPageState extends State<WorkingHoursReportsPage>
     );
   }
 
-  List<Widget> _buildShiftDistribution(Map<String, int> distribution) {
-    if (distribution.isEmpty) {
-      return [const Text('暂无数据', style: TextStyle(color: Colors.grey))];
-    }
-    
-    return distribution.entries.map((entry) {
-      return _buildStatItem('${entry.key}班', '${entry.value} 天');
-    }).toList();
-  }
 
-  List<Widget> _buildWorkDayTypeDistribution(Map<String, int> distribution) {
-    if (distribution.isEmpty) {
-      return [const Text('暂无数据', style: TextStyle(color: Colors.grey))];
-    }
-    
-    return distribution.entries.map((entry) {
-      return _buildStatItem(entry.key, '${entry.value} 天');
-    }).toList();
-  }
 
-  List<Widget> _buildMonthlyTrend(Map<int, double> trend) {
-    if (trend.isEmpty) {
-      return [const Text('暂无数据', style: TextStyle(color: Colors.grey))];
-    }
+  Map<String, dynamic> _getMonthlyChartData() {
+    // 获取所有记录并按月份分组
+    Map<String, int> monthlyMinutes = {};
     
-    return trend.entries.map((entry) {
-      return _buildStatItem('${entry.key}月', '${(entry.value / 60).toStringAsFixed(1)} 小时');
-    }).toList();
-  }
-
-  Map<String, dynamic> _getMonthlyReportData() {
-    final currentMonth = DateTime.now().month;
-    final currentYear = DateTime.now().year;
-    
-    final monthlyRecords = controller.workingHours.where((record) {
+    for (var record in controller.workingHours) {
       final recordDate = DateTime.parse(record.date);
-      return recordDate.month == currentMonth && recordDate.year == currentYear;
-    }).toList();
-
-    if (monthlyRecords.isEmpty) {
-      return {
-        'totalHours': 0.0,
-        'workDays': 0,
-        'avgHours': 0.0,
-        'overtimeHours': 0.0,
-        'shiftDistribution': <String, int>{},
-        'workDayTypeDistribution': <String, int>{},
-      };
+      final monthKey = '${recordDate.year}-${recordDate.month.toString().padLeft(2, '0')}';
+      monthlyMinutes[monthKey] = (monthlyMinutes[monthKey] ?? 0) + record.dailyWorkingMinutes;
     }
 
-    double totalMinutes = 0.0;
-    int overtimeHours = 0;
-    Map<String, int> shiftDistribution = {};
-    Map<String, int> workDayTypeDistribution = {};
+    // 按时间排序并取最近12个月
+    final sortedEntries = monthlyMinutes.entries.toList()
+      ..sort((a, b) => a.key.compareTo(b.key));
+    
+    final recentEntries = sortedEntries.length > 12 
+        ? sortedEntries.sublist(sortedEntries.length - 12)
+        : sortedEntries;
 
-    for (var record in monthlyRecords) {
-      totalMinutes += record.dailyWorkingMinutes;
-      overtimeHours += record.overtimeHours;
+    List<String> months = [];
+    List<BarChartGroupData> barGroups = [];
+    double maxY = 0;
+
+    for (int i = 0; i < recentEntries.length; i++) {
+      final entry = recentEntries[i];
+      final parts = entry.key.split('-');
+      final year = parts[0];
+      final month = parts[1];
+      final monthName = '${year.substring(2)}年${month}月';
       
-      String shiftType = record.dayShift ? '白班' : '夜班';
-      shiftDistribution[shiftType] = (shiftDistribution[shiftType] ?? 0) + 1;
-      workDayTypeDistribution[record.workDayType] = (workDayTypeDistribution[record.workDayType] ?? 0) + 1;
+      final hours = entry.value / 60.0;
+      if (hours > maxY) maxY = hours;
+      
+      months.add(monthName);
+      barGroups.add(
+        BarChartGroupData(
+          x: i,
+          barRods: [
+            BarChartRodData(
+              toY: hours,
+              color: Colors.blue,
+              width: 16,
+              borderRadius: const BorderRadius.only(
+                topLeft: Radius.circular(4),
+                topRight: Radius.circular(4),
+              ),
+            ),
+          ],
+        ),
+      );
     }
 
     return {
-      'totalHours': totalMinutes / 60,
-      'workDays': monthlyRecords.length,
-      'avgHours': (totalMinutes / 60) / monthlyRecords.length,
-      'overtimeHours': overtimeHours,
-      'shiftDistribution': shiftDistribution,
-      'workDayTypeDistribution': workDayTypeDistribution,
+      'months': months,
+      'barGroups': barGroups,
+      'maxY': maxY * 1.2, // 留出20%的空间
     };
   }
 
-  Map<String, dynamic> _getYearlyReportData() {
-    final currentYear = DateTime.now().year;
+  Map<String, dynamic> _getYearlyChartData() {
+    // 获取所有记录并按年份分组
+    Map<String, int> yearlyMinutes = {};
     
-    final yearlyRecords = controller.workingHours.where((record) {
+    for (var record in controller.workingHours) {
       final recordDate = DateTime.parse(record.date);
-      return recordDate.year == currentYear;
-    }).toList();
-
-    if (yearlyRecords.isEmpty) {
-      return {
-        'totalHours': 0.0,
-        'workDays': 0,
-        'avgMonthlyHours': 0.0,
-        'overtimeHours': 0.0,
-        'monthlyTrend': <int, double>{},
-      };
+      final yearKey = recordDate.year.toString();
+      yearlyMinutes[yearKey] = (yearlyMinutes[yearKey] ?? 0) + record.dailyWorkingMinutes;
     }
 
-    double totalMinutes = 0.0;
-    int overtimeHours = 0;
-    Map<int, double> monthlyTrend = {};
+    // 按时间排序
+    final sortedEntries = yearlyMinutes.entries.toList()
+      ..sort((a, b) => a.key.compareTo(b.key));
 
-    for (var record in yearlyRecords) {
-      totalMinutes += record.dailyWorkingMinutes;
-      overtimeHours += record.overtimeHours;
+    List<String> years = [];
+    List<BarChartGroupData> barGroups = [];
+    double maxY = 0;
+
+    for (int i = 0; i < sortedEntries.length; i++) {
+      final entry = sortedEntries[i];
+      final year = entry.key;
+      final hours = entry.value / 60.0;
       
-      final month = DateTime.parse(record.date).month;
-      monthlyTrend[month] = (monthlyTrend[month] ?? 0.0) + record.dailyWorkingMinutes;
+      if (hours > maxY) maxY = hours;
+      
+      years.add(year);
+      barGroups.add(
+        BarChartGroupData(
+          x: i,
+          barRods: [
+            BarChartRodData(
+              toY: hours,
+              color: Colors.purple,
+              width: 20,
+              borderRadius: const BorderRadius.only(
+                topLeft: Radius.circular(4),
+                topRight: Radius.circular(4),
+              ),
+            ),
+          ],
+        ),
+      );
     }
 
     return {
-      'totalHours': totalMinutes / 60,
-      'workDays': yearlyRecords.length,
-      'avgMonthlyHours': (totalMinutes / 60) / 12,
-      'overtimeHours': overtimeHours,
-      'monthlyTrend': monthlyTrend,
+      'years': years,
+      'barGroups': barGroups,
+      'maxY': maxY * 1.2, // 留出20%的空间
     };
   }
 

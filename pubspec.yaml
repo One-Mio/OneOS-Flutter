@@ -20,6 +20,7 @@ dependencies:
   shared_preferences: ^2.2.2 # 用于持久化存储登录信息
   intl: ^0.20.2 # 用于日期格式化
   device_info_plus: ^10.1.0 # 用于获取设备信息
+  fl_chart: ^0.68.0 # 用于图表展示
 
 dev_dependencies:
   flutter_test:
