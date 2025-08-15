@@ -70,6 +70,16 @@ class _WorkingHoursReportsPageState extends State<WorkingHoursReportsPage>
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            // 工作天数统计卡片
+            _buildWorkDaysCard(
+              title: '月度工作天数统计',
+              icon: Icons.calendar_today,
+              color: Colors.green,
+              workDaysList: monthlyData['workDays'],
+              labels: monthlyData['months'],
+              isMonthly: true,
+            ),
+            const SizedBox(height: 16),
             _buildReportCard(
               title: '月度工时统计',
               icon: Icons.bar_chart,
@@ -166,6 +176,16 @@ class _WorkingHoursReportsPageState extends State<WorkingHoursReportsPage>
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            // 工作天数统计卡片
+            _buildWorkDaysCard(
+              title: '年度工作天数统计',
+              icon: Icons.calendar_today,
+              color: Colors.green,
+              workDaysList: yearlyData['workDays'],
+              labels: yearlyData['years'],
+              isMonthly: false,
+            ),
+            const SizedBox(height: 16),
             _buildReportCard(
               title: '年度工时统计',
               icon: Icons.bar_chart,
@@ -398,14 +418,14 @@ class _WorkingHoursReportsPageState extends State<WorkingHoursReportsPage>
 
   Map<String, dynamic> _getMonthlyChartData() {
     // 获取所有记录并按月份分组
-    Map<String, Map<String, double>> monthlyData = {};
+    Map<String, Map<String, dynamic>> monthlyData = {};
     
     for (var record in controller.allWorkingHours) {
       final recordDate = DateTime.parse(record.date);
       final monthKey = '${recordDate.year}-${recordDate.month.toString().padLeft(2, '0')}';
       
       if (!monthlyData.containsKey(monthKey)) {
-        monthlyData[monthKey] = {'normal': 0.0, 'overtime': 0.0};
+        monthlyData[monthKey] = {'normal': 0.0, 'overtime': 0.0, 'workDays': 0};
       }
       
       // 直接计算每月加班工时的和
@@ -417,6 +437,24 @@ class _WorkingHoursReportsPageState extends State<WorkingHoursReportsPage>
       
       monthlyData[monthKey]!['normal'] = monthlyData[monthKey]!['normal']! + normalHours;
       monthlyData[monthKey]!['overtime'] = monthlyData[monthKey]!['overtime']! + overtimeHours;
+      
+      // 计算工作天数
+      bool isWorkDay = false;
+      if (record.allDaysOfTheWeek == '周末' || record.allDaysOfTheWeek == '节假日') {
+        // 周末或节假日：加班时长大于0才算工作日
+        if (record.overtimeHours > 0) {
+          isWorkDay = true;
+        }
+      } else {
+        // 正班日：加班时长大于等于0才算工作日
+        if (record.overtimeHours >= 0) {
+          isWorkDay = true;
+        }
+      }
+      
+      if (isWorkDay) {
+        monthlyData[monthKey]!['workDays'] = monthlyData[monthKey]!['workDays']! + 1;
+      }
     }
 
     // 按时间排序并取最近12个月
@@ -467,23 +505,30 @@ class _WorkingHoursReportsPageState extends State<WorkingHoursReportsPage>
       );
     }
 
+    // 计算工作天数数据
+    List<int> workDaysList = [];
+    for (final entry in recentEntries) {
+      workDaysList.add(entry.value['workDays'] as int);
+    }
+    
     return {
-      'months': months,
-      'barGroups': barGroups,
-      'maxY': maxY * 1.2, // 留出20%的空间
-    };
+       'months': months,
+       'barGroups': barGroups,
+       'maxY': maxY * 1.2, // 留出20%的空间
+       'workDays': workDaysList,
+     };
   }
 
   Map<String, dynamic> _getYearlyChartData() {
     // 获取所有记录并按年份分组
-    Map<String, Map<String, double>> yearlyData = {};
+    Map<String, Map<String, dynamic>> yearlyData = {};
     
     for (var record in controller.allWorkingHours) {
       final recordDate = DateTime.parse(record.date);
       final yearKey = recordDate.year.toString();
       
       if (!yearlyData.containsKey(yearKey)) {
-        yearlyData[yearKey] = {'normal': 0.0, 'overtime': 0.0};
+        yearlyData[yearKey] = {'normal': 0.0, 'overtime': 0.0, 'workDays': 0};
       }
       
       // 直接计算每年加班工时的和
@@ -495,6 +540,24 @@ class _WorkingHoursReportsPageState extends State<WorkingHoursReportsPage>
        
        yearlyData[yearKey]!['normal'] = yearlyData[yearKey]!['normal']! + normalHours;
        yearlyData[yearKey]!['overtime'] = yearlyData[yearKey]!['overtime']! + overtimeHours;
+       
+       // 计算工作天数
+       bool isWorkDay = false;
+       if (record.allDaysOfTheWeek == '周末' || record.allDaysOfTheWeek == '节假日') {
+         // 周末或节假日：加班时长大于0才算工作日
+         if (record.overtimeHours > 0) {
+           isWorkDay = true;
+         }
+       } else {
+         // 正班日：加班时长大于等于0才算工作日
+         if (record.overtimeHours >= 0) {
+           isWorkDay = true;
+         }
+       }
+       
+       if (isWorkDay) {
+         yearlyData[yearKey]!['workDays'] = yearlyData[yearKey]!['workDays']! + 1;
+       }
     }
 
     // 按时间排序
@@ -537,10 +600,17 @@ class _WorkingHoursReportsPageState extends State<WorkingHoursReportsPage>
       );
     }
 
+    // 计算工作天数数据
+    List<int> workDaysList = [];
+    for (final entry in sortedEntries) {
+      workDaysList.add(entry.value['workDays'] as int);
+    }
+    
     return {
       'years': years,
       'barGroups': barGroups,
       'maxY': maxY * 1.2, // 留出20%的空间
+      'workDays': workDaysList,
     };
   }
 
@@ -594,5 +664,106 @@ class _WorkingHoursReportsPageState extends State<WorkingHoursReportsPage>
       'maxDailyHours': maxDailyHours / 60,
        'minDailyHours': minDailyHours == 999999 ? 0.0 : minDailyHours / 60,
     };
+  }
+
+  // 构建工作天数统计卡片
+  Widget _buildWorkDaysCard({
+    required String title,
+    required IconData icon,
+    required Color color,
+    required List<int> workDaysList,
+    required List<String> labels,
+    required bool isMonthly,
+  }) {
+    return _buildReportCard(
+      title: title,
+      icon: icon,
+      color: color,
+      children: [
+        Container(
+           height: 100,
+           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+           child: ListView.builder(
+             scrollDirection: Axis.horizontal,
+             itemCount: workDaysList.length,
+             itemBuilder: (context, index) {
+               final workDays = workDaysList[index];
+               final label = labels[index];
+               
+               return Container(
+                 width: 70,
+                 margin: const EdgeInsets.only(right: 8),
+                 padding: const EdgeInsets.all(8),
+                 decoration: BoxDecoration(
+                   color: color.withOpacity(0.1),
+                   borderRadius: BorderRadius.circular(8),
+                   border: Border.all(
+                     color: color.withOpacity(0.3),
+                     width: 1,
+                   ),
+                 ),
+                 child: Column(
+                   mainAxisAlignment: MainAxisAlignment.center,
+                   mainAxisSize: MainAxisSize.min,
+                   children: [
+                     Text(
+                       '$workDays',
+                       style: TextStyle(
+                         fontSize: 20,
+                         fontWeight: FontWeight.bold,
+                         color: color,
+                       ),
+                     ),
+                     const SizedBox(height: 2),
+                     Text(
+                       '天',
+                       style: TextStyle(
+                         fontSize: 10,
+                         color: color.withOpacity(0.8),
+                       ),
+                     ),
+                     const SizedBox(height: 2),
+                     Text(
+                       label,
+                       style: const TextStyle(
+                         fontSize: 9,
+                         color: Colors.grey,
+                       ),
+                       textAlign: TextAlign.center,
+                       maxLines: 1,
+                       overflow: TextOverflow.ellipsis,
+                     ),
+                   ],
+                 ),
+               );
+             },
+           ),
+         ),
+        // 总计信息
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                '总工作天数:',
+                style: TextStyle(
+                  fontSize: 14,
+                  color: Colors.grey.shade600,
+                ),
+              ),
+              Text(
+                '${workDaysList.fold(0, (sum, days) => sum + days)} 天',
+                style: TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.bold,
+                  color: color,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
   }
 }
