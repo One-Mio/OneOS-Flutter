@@ -76,7 +76,7 @@ class _WorkingHoursReportsPageState extends State<WorkingHoursReportsPage>
               icon: Icons.calendar_today,
               color: Colors.green,
               workDaysList: monthlyData['workDays'],
-              labels: monthlyData['months'],
+              labels: monthlyData['workDaysLabels'],
               isMonthly: true,
             ),
             const SizedBox(height: 16),
@@ -182,7 +182,7 @@ class _WorkingHoursReportsPageState extends State<WorkingHoursReportsPage>
               icon: Icons.calendar_today,
               color: Colors.green,
               workDaysList: yearlyData['workDays'],
-              labels: yearlyData['years'],
+              labels: yearlyData['workDaysLabels'],
               isMonthly: false,
             ),
             const SizedBox(height: 16),
@@ -505,10 +505,18 @@ class _WorkingHoursReportsPageState extends State<WorkingHoursReportsPage>
       );
     }
 
-    // 计算工作天数数据
+    // 计算工作天数数据（倒序排列，最新的在前面）
     List<int> workDaysList = [];
-    for (final entry in recentEntries) {
+    List<String> workDaysMonths = [];
+    for (int i = recentEntries.length - 1; i >= 0; i--) {
+      final entry = recentEntries[i];
+      final parts = entry.key.split('-');
+      final year = parts[0];
+      final month = parts[1];
+      final monthName = '${year.substring(2)}年${month}月';
+      
       workDaysList.add(entry.value['workDays'] as int);
+      workDaysMonths.add(monthName);
     }
     
     return {
@@ -516,6 +524,7 @@ class _WorkingHoursReportsPageState extends State<WorkingHoursReportsPage>
        'barGroups': barGroups,
        'maxY': maxY * 1.2, // 留出20%的空间
        'workDays': workDaysList,
+       'workDaysLabels': workDaysMonths,
      };
   }
 
@@ -600,10 +609,13 @@ class _WorkingHoursReportsPageState extends State<WorkingHoursReportsPage>
       );
     }
 
-    // 计算工作天数数据
+    // 计算工作天数数据（倒序排列，最新的在前面）
     List<int> workDaysList = [];
-    for (final entry in sortedEntries) {
+    List<String> workDaysYears = [];
+    for (int i = sortedEntries.length - 1; i >= 0; i--) {
+      final entry = sortedEntries[i];
       workDaysList.add(entry.value['workDays'] as int);
+      workDaysYears.add(entry.key);
     }
     
     return {
@@ -611,6 +623,7 @@ class _WorkingHoursReportsPageState extends State<WorkingHoursReportsPage>
       'barGroups': barGroups,
       'maxY': maxY * 1.2, // 留出20%的空间
       'workDays': workDaysList,
+      'workDaysLabels': workDaysYears,
     };
   }
 
