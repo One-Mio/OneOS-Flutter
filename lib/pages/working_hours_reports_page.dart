@@ -398,18 +398,36 @@ class _WorkingHoursReportsPageState extends State<WorkingHoursReportsPage>
 
   Map<String, dynamic> _getMonthlyChartData() {
     // 获取所有记录并按月份分组
-    Map<String, Map<String, int>> monthlyData = {};
+    Map<String, Map<String, double>> monthlyData = {};
     
     for (var record in controller.allWorkingHours) {
       final recordDate = DateTime.parse(record.date);
       final monthKey = '${recordDate.year}-${recordDate.month.toString().padLeft(2, '0')}';
       
       if (!monthlyData.containsKey(monthKey)) {
-        monthlyData[monthKey] = {'total': 0, 'overtime': 0};
+        monthlyData[monthKey] = {'normal': 0.0, 'overtime': 0.0};
       }
       
-      monthlyData[monthKey]!['total'] = (monthlyData[monthKey]!['total'] ?? 0) + record.dailyWorkingMinutes;
-      monthlyData[monthKey]!['overtime'] = (monthlyData[monthKey]!['overtime'] ?? 0) + (record.overtimeHours > 0 ? record.overtimeHours : 0);
+      // 根据工作日类型计算正常工时和加班工时
+      bool isWeekendOrHoliday = (record.allDaysOfTheWeek == '周末' || record.allDaysOfTheWeek == '节假日');
+      double normalHours = 0.0;
+      double overtimeHours = 0.0;
+      
+      if (record.overtimeHours >= 0) {
+        if (isWeekendOrHoliday) {
+          // 周末/节假日：正常工时=0，加班工时=overtimeHours
+          normalHours = 0.0;
+          overtimeHours = record.overtimeHours / 60.0;
+        } else {
+          // 正班日：正常工时=8小时，加班工时=overtimeHours
+          normalHours = 8.0;
+          overtimeHours = record.overtimeHours / 60.0;
+        }
+      }
+      // 如果overtimeHours为负数，则该天工时为0（已在dailyWorkingMinutes中处理）
+      
+      monthlyData[monthKey]!['normal'] = monthlyData[monthKey]!['normal']! + normalHours;
+      monthlyData[monthKey]!['overtime'] = monthlyData[monthKey]!['overtime']! + overtimeHours;
     }
 
     // 按时间排序并取最近12个月
@@ -431,9 +449,9 @@ class _WorkingHoursReportsPageState extends State<WorkingHoursReportsPage>
       final month = parts[1];
       final monthName = '${year.substring(2)}年${month}月';
       
-      final totalHours = entry.value['total']! / 60.0;
-      final overtimeHours = entry.value['overtime']! / 60.0;
-      final normalHours = totalHours - overtimeHours;
+      final normalHours = entry.value['normal']!;
+      final overtimeHours = entry.value['overtime']!;
+      final totalHours = normalHours + overtimeHours;
       
       if (totalHours > maxY) maxY = totalHours;
       
@@ -469,18 +487,36 @@ class _WorkingHoursReportsPageState extends State<WorkingHoursReportsPage>
 
   Map<String, dynamic> _getYearlyChartData() {
     // 获取所有记录并按年份分组
-    Map<String, Map<String, int>> yearlyData = {};
+    Map<String, Map<String, double>> yearlyData = {};
     
     for (var record in controller.allWorkingHours) {
       final recordDate = DateTime.parse(record.date);
       final yearKey = recordDate.year.toString();
       
       if (!yearlyData.containsKey(yearKey)) {
-        yearlyData[yearKey] = {'total': 0, 'overtime': 0};
+        yearlyData[yearKey] = {'normal': 0.0, 'overtime': 0.0};
       }
       
-      yearlyData[yearKey]!['total'] = (yearlyData[yearKey]!['total'] ?? 0) + record.dailyWorkingMinutes;
-      yearlyData[yearKey]!['overtime'] = (yearlyData[yearKey]!['overtime'] ?? 0) + (record.overtimeHours > 0 ? record.overtimeHours : 0);
+      // 根据工作日类型计算正常工时和加班工时
+      bool isWeekendOrHoliday = (record.allDaysOfTheWeek == '周末' || record.allDaysOfTheWeek == '节假日');
+      double normalHours = 0.0;
+      double overtimeHours = 0.0;
+      
+      if (record.overtimeHours >= 0) {
+        if (isWeekendOrHoliday) {
+          // 周末/节假日：正常工时=0，加班工时=overtimeHours
+          normalHours = 0.0;
+          overtimeHours = record.overtimeHours / 60.0;
+        } else {
+          // 正班日：正常工时=8小时，加班工时=overtimeHours
+          normalHours = 8.0;
+          overtimeHours = record.overtimeHours / 60.0;
+        }
+      }
+      // 如果overtimeHours为负数，则该天工时为0（已在dailyWorkingMinutes中处理）
+      
+      yearlyData[yearKey]!['normal'] = yearlyData[yearKey]!['normal']! + normalHours;
+      yearlyData[yearKey]!['overtime'] = yearlyData[yearKey]!['overtime']! + overtimeHours;
     }
 
     // 按时间排序
@@ -494,9 +530,9 @@ class _WorkingHoursReportsPageState extends State<WorkingHoursReportsPage>
     for (int i = 0; i < sortedEntries.length; i++) {
       final entry = sortedEntries[i];
       final year = entry.key;
-      final totalHours = entry.value['total']! / 60.0;
-      final overtimeHours = entry.value['overtime']! / 60.0;
-      final normalHours = totalHours - overtimeHours;
+      final normalHours = entry.value['normal']!;
+      final overtimeHours = entry.value['overtime']!;
+      final totalHours = normalHours + overtimeHours;
       
       if (totalHours > maxY) maxY = totalHours;
       
@@ -547,7 +583,7 @@ class _WorkingHoursReportsPageState extends State<WorkingHoursReportsPage>
     }
 
     double totalMinutes = 0.0;
-    int overtimeHours = 0;
+    double overtimeMinutes = 0.0;
     int maxDailyHours = 0;
     int minDailyHours = 999999;
     
@@ -555,7 +591,10 @@ class _WorkingHoursReportsPageState extends State<WorkingHoursReportsPage>
 
     for (var record in allRecords) {
       totalMinutes += record.dailyWorkingMinutes;
-      overtimeHours += record.overtimeHours;
+      // 只统计正数的加班时长
+      if (record.overtimeHours > 0) {
+        overtimeMinutes += record.overtimeHours;
+      }
       
       if (record.dailyWorkingMinutes > maxDailyHours) {
         maxDailyHours = record.dailyWorkingMinutes;
@@ -574,7 +613,7 @@ class _WorkingHoursReportsPageState extends State<WorkingHoursReportsPage>
       'workDays': allRecords.length,
       'startDate': dates.isNotEmpty ? '${dates.first.year}-${dates.first.month.toString().padLeft(2, '0')}-${dates.first.day.toString().padLeft(2, '0')}' : '暂无数据',
       'lastDate': dates.isNotEmpty ? '${dates.last.year}-${dates.last.month.toString().padLeft(2, '0')}-${dates.last.day.toString().padLeft(2, '0')}' : '暂无数据',
-      'overtimeHours': overtimeHours,
+      'overtimeHours': overtimeMinutes / 60,
       'avgDailyHours': (totalMinutes / 60) / allRecords.length,
       'maxDailyHours': maxDailyHours / 60,
        'minDailyHours': minDailyHours == 999999 ? 0.0 : minDailyHours / 60,
