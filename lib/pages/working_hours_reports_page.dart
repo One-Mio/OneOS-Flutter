@@ -569,10 +569,8 @@ class _WorkingHoursReportsPageState extends State<WorkingHoursReportsPage>
 
     for (var record in allRecords) {
       totalMinutes += record.dailyWorkingMinutes;
-      // 只统计正数的加班时长（overtimeHours已经是小时单位）
-      if (record.overtimeHours > 0) {
-        overtimeMinutes += record.overtimeHours;
-      }
+      // 统计所有加班时长（overtimeHours已经是小时单位）
+      overtimeMinutes += record.overtimeHours;
       
       if (record.dailyWorkingMinutes > maxDailyHours) {
         maxDailyHours = record.dailyWorkingMinutes;
