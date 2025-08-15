@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../controllers/working_hour_controller.dart';
 import '../models/working_hour_model.dart';
+import 'working_hours_reports_page.dart';
 
 class WorkingHoursPage extends StatelessWidget {
   const WorkingHoursPage({Key? key}) : super(key: key);
@@ -53,6 +54,13 @@ class WorkingHoursPage extends StatelessWidget {
         foregroundColor: Colors.white,
         elevation: 0,
         actions: [
+          IconButton(
+            icon: const Icon(Icons.bar_chart),
+            onPressed: () => _navigateToReportsPage(),
+            tooltip: '工时报表',
+            padding: const EdgeInsets.all(4),
+            constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
+          ),
           IconButton(
             icon: const Icon(Icons.add),
             onPressed: () => _showAddWorkingHourDialog(controller),
@@ -732,6 +740,10 @@ class WorkingHoursPage extends StatelessWidget {
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
     );
+  }
+
+  void _navigateToReportsPage() {
+    Get.to(() => const WorkingHoursReportsPage());
   }
 }
 
