@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:fl_chart/fl_chart.dart';
-import '../controllers/working_hour_controller.dart';
-import '../models/working_hour_model.dart';
+import '../../controllers/working_hour_controller.dart';
+import '../../models/working_hour_model.dart';
 
 class WorkingHoursReportsPage extends StatefulWidget {
   const WorkingHoursReportsPage({Key? key}) : super(key: key);
@@ -928,83 +928,174 @@ class _WorkingHoursReportsPageState extends State<WorkingHoursReportsPage>
     );
   }
 
-  // 显示月份选择器
+  // 显示月份选择器（底部弹出对话框）
   void _showMonthPicker() {
-    showDialog(
+    int tempSelectedYear = _selectedMonth.year;
+    int tempSelectedMonth = _selectedMonth.month;
+    
+    // 年份列表（显示最近10年）
+    final years = List.generate(10, (index) => DateTime.now().year - 5 + index);
+    final months = List.generate(12, (index) => index + 1);
+    
+    // 找到当前选中的索引
+    int yearIndex = years.indexOf(tempSelectedYear);
+    int monthIndex = tempSelectedMonth - 1;
+    
+    if (yearIndex == -1) {
+      yearIndex = years.indexOf(DateTime.now().year);
+      tempSelectedYear = DateTime.now().year;
+    }
+    
+    showModalBottomSheet(
       context: context,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
       builder: (BuildContext context) {
-        return AlertDialog(
-          title: const Text('选择月份'),
-          content: SizedBox(
-            width: 300,
-            height: 300,
-            child: YearPicker(
-              firstDate: DateTime(2020),
-              lastDate: DateTime.now(),
-              selectedDate: _selectedMonth,
-              onChanged: (DateTime dateTime) {
-                Navigator.pop(context);
-                _showMonthPickerForYear(dateTime.year);
-              },
-            ),
-          ),
+        return StatefulBuilder(
+          builder: (context, setModalState) {
+            return Container(
+              height: 350,
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                children: [
+                  // 顶部拖拽指示器
+                  Container(
+                    width: 40,
+                    height: 4,
+                    margin: const EdgeInsets.only(bottom: 16),
+                    decoration: BoxDecoration(
+                      color: Colors.grey.shade300,
+                      borderRadius: BorderRadius.circular(2),
+                    ),
+                  ),
+                  // 标题栏
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      TextButton(
+                        onPressed: () => Navigator.pop(context),
+                        child: const Text('取消'),
+                      ),
+                      const Text(
+                        '选择月份',
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      TextButton(
+                        onPressed: () {
+                          setState(() {
+                            _selectedMonth = DateTime(tempSelectedYear, tempSelectedMonth);
+                          });
+                          Navigator.pop(context);
+                        },
+                        child: const Text('确定'),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 16),
+                  // 年月选择器主体
+                  Expanded(
+                    child: Row(
+                        children: [
+                            // 左侧年份选择
+                            Expanded(
+                              child: ListWheelScrollView.useDelegate(
+                                itemExtent: 50,
+                                perspective: 0.005,
+                                diameterRatio: 1.2,
+                                physics: const FixedExtentScrollPhysics(),
+                                controller: FixedExtentScrollController(
+                                  initialItem: yearIndex,
+                                ),
+                                onSelectedItemChanged: (index) {
+                                  setModalState(() {
+                                    tempSelectedYear = years[index];
+                                  });
+                                },
+                                childDelegate: ListWheelChildBuilderDelegate(
+                                  builder: (context, index) {
+                                    if (index < 0 || index >= years.length) return null;
+                                    final year = years[index];
+                                    return Container(
+                                      height: 50,
+                                      alignment: Alignment.center,
+                                      child: Text(
+                                        '${year}年',
+                                        style: TextStyle(
+                                          fontSize: 18,
+                                          fontWeight: tempSelectedYear == year 
+                                              ? FontWeight.bold 
+                                              : FontWeight.normal,
+                                          color: tempSelectedYear == year 
+                                              ? Colors.blue.shade700 
+                                              : Colors.black87,
+                                        ),
+                                      ),
+                                    );
+                                  },
+                                  childCount: years.length,
+                                ),
+                              ),
+                            ),
+                            // 右侧月份选择
+                            Expanded(
+                              child: ListWheelScrollView.useDelegate(
+                                itemExtent: 50,
+                                perspective: 0.005,
+                                diameterRatio: 1.2,
+                                physics: const FixedExtentScrollPhysics(),
+                                controller: FixedExtentScrollController(
+                                  initialItem: monthIndex,
+                                ),
+                                onSelectedItemChanged: (index) {
+                                  setModalState(() {
+                                    tempSelectedMonth = months[index];
+                                  });
+                                },
+                                childDelegate: ListWheelChildBuilderDelegate(
+                                  builder: (context, index) {
+                                    if (index < 0 || index >= months.length) return null;
+                                    final month = months[index];
+                                    return Container(
+                                      height: 50,
+                                      alignment: Alignment.center,
+                                      child: Text(
+                                        '${month}月',
+                                        style: TextStyle(
+                                          fontSize: 18,
+                                          fontWeight: tempSelectedMonth == month 
+                                              ? FontWeight.bold 
+                                              : FontWeight.normal,
+                                          color: tempSelectedMonth == month 
+                                              ? Colors.blue.shade700 
+                                              : Colors.black87,
+                                        ),
+                                      ),
+                                    );
+                                  },
+                                  childCount: months.length,
+                                ),
+                              ),
+                            ),
+                        ],
+                      ),
+                  ),
+                ],
+              ),
+            );
+          },
         );
       },
     );
   }
 
-  // 显示指定年份的月份选择器
+  // 显示指定年份的月份选择器（已废弃，保留兼容性）
   void _showMonthPickerForYear(int year) {
-    showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: Text('选择${year}年的月份'),
-          content: SizedBox(
-            width: 300,
-            height: 200,
-            child: GridView.builder(
-              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                crossAxisCount: 3,
-                childAspectRatio: 2,
-              ),
-              itemCount: 12,
-              itemBuilder: (context, index) {
-                final month = index + 1;
-                final isSelected = _selectedMonth.year == year && _selectedMonth.month == month;
-                return InkWell(
-                  onTap: () {
-                    setState(() {
-                      _selectedMonth = DateTime(year, month);
-                    });
-                    Navigator.pop(context);
-                  },
-                  child: Container(
-                    margin: const EdgeInsets.all(4),
-                    decoration: BoxDecoration(
-                      color: isSelected ? Colors.blue.shade100 : Colors.grey.shade100,
-                      borderRadius: BorderRadius.circular(8),
-                      border: Border.all(
-                        color: isSelected ? Colors.blue.shade300 : Colors.grey.shade300,
-                      ),
-                    ),
-                    child: Center(
-                      child: Text(
-                        '${month}月',
-                        style: TextStyle(
-                          color: isSelected ? Colors.blue.shade700 : Colors.black87,
-                          fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-                        ),
-                      ),
-                    ),
-                  ),
-                );
-              },
-            ),
-          ),
-        );
-      },
-    );
+    // 直接调用新的月份选择器
+    _showMonthPicker();
   }
 
   // 获取当前选中月份的数据
@@ -1015,8 +1106,8 @@ class _WorkingHoursReportsPageState extends State<WorkingHoursReportsPage>
       
       // 查找当月的工时记录并按新逻辑计算工作天数
       int workDays = 0;
-      if (controller.workingHours.isNotEmpty) {
-        for (final record in controller.workingHours) {
+      if (controller.allWorkingHours.isNotEmpty) {
+        for (final record in controller.allWorkingHours) {
           try {
             final recordDate = DateTime.parse(record.date);
             if (recordDate.year == _selectedMonth.year && recordDate.month == _selectedMonth.month) {

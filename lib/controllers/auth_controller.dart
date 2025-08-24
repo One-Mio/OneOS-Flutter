@@ -1,6 +1,6 @@
 import 'package:get/get.dart';
 import '../services/pocketbase_service.dart';
-import '../pages/login_page.dart';
+import '../pages/other/login_page.dart';
 import '../pages/home_page.dart';
 
 class AuthController extends GetxController {

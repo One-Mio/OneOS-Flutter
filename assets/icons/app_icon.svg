@@ -1,0 +1,51 @@
+<svg width="512" height="512" viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="bgGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#667eea;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#764ba2;stop-opacity:1" />
+    </linearGradient>
+    <linearGradient id="circleGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#ffffff;stop-opacity:0.9" />
+      <stop offset="100%" style="stop-color:#ffffff;stop-opacity:0.6" />
+    </linearGradient>
+  </defs>
+  
+  <!-- 背景圆角矩形 -->
+  <rect width="512" height="512" rx="120" ry="120" fill="url(#bgGradient)"/>
+  
+  <!-- 主要图形：代表操作系统的抽象图标 -->
+  <!-- 外圆环 -->
+  <circle cx="256" cy="256" r="180" fill="none" stroke="url(#circleGradient)" stroke-width="8" opacity="0.8"/>
+  
+  <!-- 内部核心圆 -->
+  <circle cx="256" cy="256" r="80" fill="url(#circleGradient)" opacity="0.9"/>
+  
+  <!-- 连接线条，代表系统连接 -->
+  <g stroke="url(#circleGradient)" stroke-width="6" fill="none" opacity="0.7">
+    <!-- 水平线 -->
+    <line x1="120" y1="256" x2="176" y2="256"/>
+    <line x1="336" y1="256" x2="392" y2="256"/>
+    
+    <!-- 垂直线 -->
+    <line x1="256" y1="120" x2="256" y2="176"/>
+    <line x1="256" y1="336" x2="256" y2="392"/>
+    
+    <!-- 对角线 -->
+    <line x1="181" y1="181" x2="220" y2="220"/>
+    <line x1="292" y1="292" x2="331" y2="331"/>
+    <line x1="331" y1="181" x2="292" y2="220"/>
+    <line x1="220" y1="292" x2="181" y2="331"/>
+  </g>
+  
+  <!-- 装饰性小圆点 -->
+  <g fill="url(#circleGradient)" opacity="0.8">
+    <circle cx="256" cy="140" r="12"/>
+    <circle cx="256" cy="372" r="12"/>
+    <circle cx="140" cy="256" r="12"/>
+    <circle cx="372" cy="256" r="12"/>
+  </g>
+  
+  <!-- 中心标识 "O" 字母 -->
+  <text x="256" y="280" font-family="Arial, sans-serif" font-size="120" font-weight="bold" 
+        text-anchor="middle" fill="#764ba2" opacity="0.3">O</text>
+</svg>

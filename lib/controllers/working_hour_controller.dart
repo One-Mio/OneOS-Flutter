@@ -17,6 +17,9 @@ class WorkingHourController extends GetxController {
   var currentYear = DateTime.now().year.obs;
   var currentMonth = DateTime.now().month.obs;
   
+  // 上次选择的日期（用于添加工时对话框默认日期）
+  var lastSelectedDate = DateTime.now().obs;
+  
 
 
   @override
@@ -131,6 +134,9 @@ class WorkingHourController extends GetxController {
       
       // 调用API创建记录
       await _pocketBaseService.pb.collection('working_hours').create(body: data);
+      
+      // 更新上次选择的日期
+      lastSelectedDate.value = workDate;
       
       // 添加成功后刷新数据
       await fetchWorkingHours();

@@ -1,29 +1,25 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import '../controllers/auth_controller.dart';
-import '../services/pocketbase_service.dart';
-import 'device_info_page.dart';
+import '../../controllers/auth_controller.dart';
+import '../../services/pocketbase_service.dart';
+import 'network_info_page.dart';
+import '../other/device_info_page.dart';
 
-class SettingsPage extends StatefulWidget {
+class SettingsPage extends StatelessWidget {
   const SettingsPage({super.key});
 
   @override
-  State<SettingsPage> createState() => _SettingsPageState();
-}
-
-class _SettingsPageState extends State<SettingsPage> {
-  final AuthController authController = Get.find<AuthController>();
-  final PocketBaseService pocketBaseService = Get.find<PocketBaseService>();
-
-  @override
   Widget build(BuildContext context) {
+    final AuthController authController = Get.find<AuthController>();
+    final PocketBaseService pocketBaseService = Get.find<PocketBaseService>();
+
     return Scaffold(
-      backgroundColor: const Color(0xFFF5F5F5),
+      backgroundColor: const Color(0xFFF8F9FA),
       appBar: AppBar(
         title: const Text(
           '设置',
           style: TextStyle(
-            fontSize: 18,
+            fontSize: 20,
             fontWeight: FontWeight.w600,
             color: Colors.black87,
           ),
@@ -31,29 +27,42 @@ class _SettingsPageState extends State<SettingsPage> {
         backgroundColor: Colors.white,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios, color: Colors.black87, size: 20),
+          icon: const Icon(Icons.arrow_back_ios, color: Colors.black87),
           onPressed: () => Get.back(),
         ),
       ),
       body: SingleChildScrollView(
+        padding: const EdgeInsets.all(16),
         child: Column(
           children: [
-            const SizedBox(height: 12),
+            // 用户信息卡片
+            _buildUserCard(authController, pocketBaseService),
+            const SizedBox(height: 16),
             
-            // 账号信息卡片
-            _buildAccountCard(),
+            // 设备信息
+            _buildSettingsCard(
+              title: '设备信息',
+              items: [
+                _buildSettingsItem(
+                  icon: Icons.phone_android,
+                  title: '我的设备',
+                  subtitle: '查看设备详细信息',
+                  onTap: () => Get.to(() => const DeviceInfoPage()),
+                ),
+                _buildSettingsItem(
+                  icon: Icons.network_wifi,
+                  title: '网络信息',
+                  subtitle: '查看网络IP、局域网IP',
+                  onTap: () => Get.to(() => NetworkInfoPage()),
+                ),
+              ],
+            ),
+            const SizedBox(height: 16),
             
-            const SizedBox(height: 12),
-            
-            // 我的设备卡片
-            _buildDeviceCard(),
-            
-            const SizedBox(height: 12),
-            
-            // 系统设置组
-            _buildSettingsGroup(
-              '系统设置',
-              [
+            // 系统设置
+            _buildSettingsCard(
+              title: '系统设置',
+              items: [
                 _buildSettingsItem(
                   icon: Icons.notifications_outlined,
                   title: '通知管理',
@@ -61,59 +70,57 @@ class _SettingsPageState extends State<SettingsPage> {
                   onTap: () => _showComingSoon(),
                 ),
                 _buildSettingsItem(
-                  icon: Icons.security_outlined,
+                  icon: Icons.security,
                   title: '隐私与安全',
                   subtitle: '权限管理、数据保护',
                   onTap: () => _showComingSoon(),
                 ),
                 _buildSettingsItem(
-                  icon: Icons.display_settings_outlined,
-                  title: '显示与亮度',
+                  icon: Icons.palette_outlined,
+                  title: '显示与主题',
                   subtitle: '主题、字体大小',
                   onTap: () => _showComingSoon(),
                 ),
                 _buildSettingsItem(
-                  icon: Icons.storage_outlined,
-                  title: '存储空间',
+                  icon: Icons.storage,
+                  title: '存储管理',
                   subtitle: '清理缓存、管理存储',
                   onTap: () => _showComingSoon(),
                 ),
               ],
             ),
+            const SizedBox(height: 16),
             
-            const SizedBox(height: 12),
-            
-            // 应用设置组
-            _buildSettingsGroup(
-              '应用设置',
-              [
+            // 应用设置
+            _buildSettingsCard(
+              title: '应用设置',
+              items: [
                 _buildSettingsItem(
-                  icon: Icons.language_outlined,
+                  icon: Icons.language,
                   title: '语言与地区',
                   subtitle: '中文（简体）',
                   onTap: () => _showComingSoon(),
                 ),
                 _buildSettingsItem(
-                  icon: Icons.update_outlined,
-                  title: '系统更新',
-                  subtitle: '检查更新',
+                  icon: Icons.update,
+                  title: '检查更新',
+                  subtitle: '当前版本 1.0.0',
                   onTap: () => _showComingSoon(),
                 ),
                 _buildSettingsItem(
-                  icon: Icons.backup_outlined,
+                  icon: Icons.backup,
                   title: '备份与恢复',
-                  subtitle: '数据备份',
+                  subtitle: '数据备份与同步',
                   onTap: () => _showComingSoon(),
                 ),
               ],
             ),
+            const SizedBox(height: 16),
             
-            const SizedBox(height: 12),
-            
-            // 其他设置组
-            _buildSettingsGroup(
-              '其他',
-              [
+            // 其他
+            _buildSettingsCard(
+              title: '其他',
+              items: [
                 _buildSettingsItem(
                   icon: Icons.help_outline,
                   title: '帮助与反馈',
@@ -122,102 +129,27 @@ class _SettingsPageState extends State<SettingsPage> {
                 ),
                 _buildSettingsItem(
                   icon: Icons.info_outline,
-                  title: '关于',
-                  subtitle: '版本信息',
+                  title: '关于应用',
+                  subtitle: '版本信息与开发者',
                   onTap: () => _showAbout(),
                 ),
               ],
             ),
-            
-            const SizedBox(height: 20),
+            const SizedBox(height: 24),
             
             // 退出登录按钮
             Obx(() => authController.isLoggedIn
-                ? _buildLogoutButton()
+                ? _buildLogoutButton(authController)
                 : const SizedBox()),
-            
-            const SizedBox(height: 40),
+            const SizedBox(height: 32),
           ],
         ),
       ),
     );
   }
 
-  Widget _buildDeviceCard() {
+  Widget _buildUserCard(AuthController authController, PocketBaseService pocketBaseService) {
     return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 10,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-      child: InkWell(
-        onTap: () => Get.to(() => const DeviceInfoPage()),
-        borderRadius: BorderRadius.circular(16),
-        child: Padding(
-          padding: const EdgeInsets.all(20),
-          child: Row(
-            children: [
-              Container(
-                width: 50,
-                height: 50,
-                decoration: BoxDecoration(
-                  color: const Color(0xFF34C759).withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: const Icon(
-                  Icons.phone_android,
-                  color: Color(0xFF34C759),
-                  size: 26,
-                ),
-              ),
-              const SizedBox(width: 16),
-              const Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      '我的设备',
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w600,
-                        color: Colors.black87,
-                      ),
-                    ),
-                    SizedBox(height: 4),
-                    Text(
-                      '查看设备详细信息',
-                      style: TextStyle(
-                        fontSize: 14,
-                        color: Colors.grey,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              const Icon(
-                Icons.arrow_forward_ios,
-                color: Colors.grey,
-                size: 16,
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-
-
-  Widget _buildAccountCard() {
-    return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 16),
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
         color: Colors.white,
@@ -231,19 +163,23 @@ class _SettingsPageState extends State<SettingsPage> {
         ],
       ),
       child: Obx(() => authController.isLoggedIn
-          ? _buildLoggedInAccount()
-          : _buildLoginPrompt()),
+          ? _buildLoggedInUser(pocketBaseService)
+          : _buildLoginPrompt(authController)),
     );
   }
 
-  Widget _buildLoggedInAccount() {
+  Widget _buildLoggedInUser(PocketBaseService pocketBaseService) {
     return Row(
       children: [
         Container(
           width: 60,
           height: 60,
           decoration: BoxDecoration(
-            color: const Color(0xFF007AFF),
+            gradient: const LinearGradient(
+              colors: [Color(0xFF007AFF), Color(0xFF5856D6)],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
             borderRadius: BorderRadius.circular(30),
           ),
           child: const Icon(
@@ -285,21 +221,22 @@ class _SettingsPageState extends State<SettingsPage> {
     );
   }
 
-  Widget _buildLoginPrompt() {
+  Widget _buildLoginPrompt(AuthController authController) {
     return InkWell(
       onTap: () => authController.showLoginPage(),
+      borderRadius: BorderRadius.circular(12),
       child: Row(
         children: [
           Container(
             width: 60,
             height: 60,
             decoration: BoxDecoration(
-              color: Colors.grey.shade300,
+              color: Colors.grey.shade200,
               borderRadius: BorderRadius.circular(30),
             ),
-            child: const Icon(
+            child: Icon(
               Icons.person_outline,
-              color: Colors.grey,
+              color: Colors.grey.shade600,
               size: 30,
             ),
           ),
@@ -337,9 +274,8 @@ class _SettingsPageState extends State<SettingsPage> {
     );
   }
 
-  Widget _buildSettingsGroup(String title, List<Widget> items) {
+  Widget _buildSettingsCard({required String title, required List<Widget> items}) {
     return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 16),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(16),
@@ -355,7 +291,7 @@ class _SettingsPageState extends State<SettingsPage> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Padding(
-            padding: const EdgeInsets.fromLTRB(20, 16, 20, 8),
+            padding: const EdgeInsets.fromLTRB(20, 20, 20, 8),
             child: Text(
               title,
               style: const TextStyle(
@@ -376,7 +312,6 @@ class _SettingsPageState extends State<SettingsPage> {
     required String title,
     required String subtitle,
     required VoidCallback onTap,
-    Widget? trailing,
   }) {
     return InkWell(
       onTap: onTap,
@@ -421,24 +356,22 @@ class _SettingsPageState extends State<SettingsPage> {
                 ],
               ),
             ),
-            trailing ??
-                const Icon(
-                  Icons.arrow_forward_ios,
-                  color: Colors.grey,
-                  size: 16,
-                ),
+            const Icon(
+              Icons.arrow_forward_ios,
+              color: Colors.grey,
+              size: 16,
+            ),
           ],
         ),
       ),
     );
   }
 
-  Widget _buildLogoutButton() {
+  Widget _buildLogoutButton(AuthController authController) {
     return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 16),
       width: double.infinity,
       child: ElevatedButton(
-        onPressed: () => _showLogoutDialog(),
+        onPressed: () => _showLogoutDialog(authController),
         style: ElevatedButton.styleFrom(
           backgroundColor: Colors.red.shade50,
           foregroundColor: Colors.red,
@@ -468,6 +401,7 @@ class _SettingsPageState extends State<SettingsPage> {
       colorText: Colors.white,
       margin: const EdgeInsets.all(16),
       borderRadius: 8,
+      duration: const Duration(seconds: 2),
     );
   }
 
@@ -478,9 +412,9 @@ class _SettingsPageState extends State<SettingsPage> {
           borderRadius: BorderRadius.circular(16),
         ),
         title: const Text(
-          '关于应用',
+          '关于 OneOS',
           style: TextStyle(
-            fontSize: 18,
+            fontSize: 20,
             fontWeight: FontWeight.w600,
           ),
         ),
@@ -488,24 +422,47 @@ class _SettingsPageState extends State<SettingsPage> {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('OneOS'),
+            Text(
+              '版本信息',
+              style: TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.w600,
+                color: Colors.black87,
+              ),
+            ),
+            SizedBox(height: 12),
+            Text('应用版本: 1.0.0'),
             SizedBox(height: 8),
-            Text('版本: 1.0.0'),
+            Text('Flutter版本: 3.24.4'),
             SizedBox(height: 8),
-            Text('基于Flutter开发的移动应用'),
+            Text('Dart版本: 3.5.4'),
+            SizedBox(height: 16),
+            Text(
+              '基于Flutter开发的现代化移动应用',
+              style: TextStyle(
+                fontSize: 14,
+                color: Colors.grey,
+              ),
+            ),
           ],
         ),
         actions: [
           TextButton(
             onPressed: () => Get.back(),
-            child: const Text('确定'),
+            child: const Text(
+              '确定',
+              style: TextStyle(
+                color: Color(0xFF007AFF),
+                fontWeight: FontWeight.w500,
+              ),
+            ),
           ),
         ],
       ),
     );
   }
 
-  void _showLogoutDialog() {
+  void _showLogoutDialog(AuthController authController) {
     Get.dialog(
       AlertDialog(
         shape: RoundedRectangleBorder(
@@ -518,11 +475,20 @@ class _SettingsPageState extends State<SettingsPage> {
             fontWeight: FontWeight.w600,
           ),
         ),
-        content: const Text('确定要退出登录吗？'),
+        content: const Text(
+          '确定要退出登录吗？退出后需要重新登录才能同步数据。',
+          style: TextStyle(fontSize: 16),
+        ),
         actions: [
           TextButton(
             onPressed: () => Get.back(),
-            child: const Text('取消'),
+            child: const Text(
+              '取消',
+              style: TextStyle(
+                color: Colors.grey,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
           ),
           TextButton(
             onPressed: () {
@@ -530,17 +496,21 @@ class _SettingsPageState extends State<SettingsPage> {
               authController.logout();
               Get.snackbar(
                 '提示',
-                '已退出登录',
+                '已成功退出登录',
                 snackPosition: SnackPosition.BOTTOM,
-                backgroundColor: Colors.black87,
+                backgroundColor: Colors.green,
                 colorText: Colors.white,
                 margin: const EdgeInsets.all(16),
                 borderRadius: 8,
+                duration: const Duration(seconds: 2),
               );
             },
             child: const Text(
               '确定',
-              style: TextStyle(color: Colors.red),
+              style: TextStyle(
+                color: Colors.red,
+                fontWeight: FontWeight.w500,
+              ),
             ),
           ),
         ],

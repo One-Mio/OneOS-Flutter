@@ -2,6 +2,9 @@ import 'dart:convert';
 import 'package:get/get.dart';
 import 'package:pocketbase/pocketbase.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import '../models/account_model.dart';
+import '../models/category_model.dart';
+import '../models/account_book_model.dart';
 
 class PocketBaseService extends GetxService {
   late PocketBase pb;
@@ -86,7 +89,9 @@ class PocketBaseService extends GetxService {
       if (pb.authStore.isValid) {
         final prefs = await SharedPreferences.getInstance();
         await prefs.setString(_tokenKey, pb.authStore.token);
-        await prefs.setString(_modelKey, jsonEncode(pb.authStore.model.toJson()));
+        if (pb.authStore.record != null) {
+          await prefs.setString(_modelKey, jsonEncode(pb.authStore.record!.toJson()));
+        }
       }
     } catch (e) {
       print('保存认证信息时出错: $e');
@@ -99,7 +104,7 @@ class PocketBaseService extends GetxService {
       errorMessage.value = '';
       
       // 尝试管理员登录
-      final authData = await pb.admins.authWithPassword(email, password);
+      await pb.collection('_superusers').authWithPassword(email, password);
       
       // 如果成功，更新认证状态并保存到持久化存储
       isAuthenticated.value = pb.authStore.isValid;
@@ -130,4 +135,236 @@ class PocketBaseService extends GetxService {
   }
 
   bool get isLoggedIn => isAuthenticated.value;
+
+  // ==================== 记账相关API ====================
+  
+  // 获取账户列表
+  Future<AccountListResponse?> getAccounts({int page = 1, int perPage = 30}) async {
+    try {
+      final result = await pb.collection('accounts').getList(
+        page: page,
+        perPage: perPage,
+      );
+      return AccountListResponse.fromJson(result.toJson());
+    } catch (e) {
+      errorMessage.value = '获取账户列表失败: $e';
+      return null;
+    }
+  }
+
+  // 创建账户
+  Future<AccountModel?> createAccount({
+    required String name,
+    required String type,
+    required double initialAmount,
+  }) async {
+    try {
+      final result = await pb.collection('accounts').create(body: {
+        'name': name,
+        'type': type,
+        'initial_amount': initialAmount,
+      });
+      return AccountModel.fromJson(result.toJson());
+    } catch (e) {
+      errorMessage.value = '创建账户失败: $e';
+      return null;
+    }
+  }
+
+  // 更新账户
+  Future<AccountModel?> updateAccount(
+    String id, {
+    String? name,
+    String? type,
+    double? initialAmount,
+  }) async {
+    try {
+      final body = <String, dynamic>{};
+      if (name != null) body['name'] = name;
+      if (type != null) body['type'] = type;
+      if (initialAmount != null) body['initial_amount'] = initialAmount;
+      
+      final result = await pb.collection('accounts').update(id, body: body);
+      return AccountModel.fromJson(result.toJson());
+    } catch (e) {
+      errorMessage.value = '更新账户失败: $e';
+      return null;
+    }
+  }
+
+  // 删除账户
+  Future<bool> deleteAccount(String id) async {
+    try {
+      await pb.collection('accounts').delete(id);
+      return true;
+    } catch (e) {
+      errorMessage.value = '删除账户失败: $e';
+      return false;
+    }
+  }
+
+  // 获取分类列表
+  Future<CategoryListResponse?> getCategories({int page = 1, int perPage = 30, String? filter}) async {
+    try {
+      final result = await pb.collection('account_book_categories').getList(
+        page: page,
+        perPage: perPage,
+        filter: filter,
+      );
+      return CategoryListResponse.fromJson(result.toJson());
+    } catch (e) {
+      errorMessage.value = '获取分类列表失败: $e';
+      return null;
+    }
+  }
+
+  // 获取一级分类
+  Future<CategoryListResponse?> getTopLevelCategories({int page = 1, int perPage = 30}) async {
+    return getCategories(page: page, perPage: perPage, filter: 'owner_id = ""');
+  }
+
+  // 获取二级分类
+  Future<CategoryListResponse?> getSubCategories(String parentId, {int page = 1, int perPage = 30}) async {
+    return getCategories(page: page, perPage: perPage, filter: 'owner_id = "$parentId"');
+  }
+
+  // 创建分类
+  Future<CategoryModel?> createCategory({
+    required String name,
+    required String type,
+    String? icon,
+    String? ownerId,
+  }) async {
+    try {
+      final body = {
+        'name': name,
+        'type': type,
+      };
+      if (icon != null) body['icon'] = icon;
+      if (ownerId != null) body['owner_id'] = ownerId;
+      
+      final result = await pb.collection('account_book_categories').create(body: body);
+      return CategoryModel.fromJson(result.toJson());
+    } catch (e) {
+      errorMessage.value = '创建分类失败: $e';
+      return null;
+    }
+  }
+
+  // 更新分类
+  Future<CategoryModel?> updateCategory(
+    String id, {
+    String? name,
+    String? type,
+    String? icon,
+    String? ownerId,
+  }) async {
+    try {
+      final body = <String, dynamic>{};
+      if (name != null) body['name'] = name;
+      if (type != null) body['type'] = type;
+      if (icon != null) body['icon'] = icon;
+      if (ownerId != null) body['owner_id'] = ownerId;
+      
+      final result = await pb.collection('account_book_categories').update(id, body: body);
+      return CategoryModel.fromJson(result.toJson());
+    } catch (e) {
+      errorMessage.value = '更新分类失败: $e';
+      return null;
+    }
+  }
+
+  // 删除分类
+  Future<bool> deleteCategory(String id) async {
+    try {
+      await pb.collection('account_book_categories').delete(id);
+      return true;
+    } catch (e) {
+      errorMessage.value = '删除分类失败: $e';
+      return false;
+    }
+  }
+
+  // 获取记账记录列表
+  Future<AccountBookListResponse?> getAccountBooks({int page = 1, int perPage = 30, String? filter, String? sort}) async {
+    try {
+      final result = await pb.collection('account_book').getList(
+        page: page,
+        perPage: perPage,
+        filter: filter,
+        sort: sort ?? '-transaction_date',
+      );
+      
+      return AccountBookListResponse.fromJson(result.toJson());
+    } catch (e) {
+      errorMessage.value = '获取记账记录失败: $e';
+      return null;
+    }
+  }
+
+  // 创建记账记录
+  Future<AccountBookModel?> createAccountBook({
+    required double amount,
+    String? accountId, // 改为可选参数
+    required String categoryId,
+    required DateTime accountBookDate,
+    String? description,
+    String? attachment,
+  }) async {
+    try {
+      final body = {
+        'amount': amount,
+        'category_id': categoryId,
+        'transaction_date': accountBookDate.toIso8601String(),
+      };
+      // 只有当accountId不为null时才添加到body中
+      if (accountId != null) body['account_id'] = accountId;
+      if (description != null) body['description'] = description;
+      if (attachment != null) body['attachment'] = attachment;
+      
+      final result = await pb.collection('account_book').create(body: body);
+      return AccountBookModel.fromJson(result.toJson());
+    } catch (e) {
+      errorMessage.value = '创建记账记录失败: $e';
+      return null;
+    }
+  }
+
+  // 更新记账记录
+  Future<AccountBookModel?> updateAccountBook(
+    String id, {
+    double? amount,
+    String? accountId,
+    String? categoryId,
+    DateTime? accountBookDate,
+    String? description,
+    String? attachment,
+  }) async {
+    try {
+      final body = <String, dynamic>{};
+      if (amount != null) body['amount'] = amount;
+      if (accountId != null) body['account_id'] = accountId;
+      if (categoryId != null) body['category_id'] = categoryId;
+      if (accountBookDate != null) body['transaction_date'] = accountBookDate.toIso8601String();
+      if (description != null) body['description'] = description;
+      if (attachment != null) body['attachment'] = attachment;
+      
+      final result = await pb.collection('account_book').update(id, body: body);
+      return AccountBookModel.fromJson(result.toJson());
+    } catch (e) {
+      errorMessage.value = '更新记账记录失败: $e';
+      return null;
+    }
+  }
+
+  // 删除记账记录
+  Future<bool> deleteAccountBook(String id) async {
+    try {
+      await pb.collection('account_book').delete(id);
+      return true;
+    } catch (e) {
+      errorMessage.value = '删除记账记录失败: $e';
+      return false;
+    }
+  }
 }

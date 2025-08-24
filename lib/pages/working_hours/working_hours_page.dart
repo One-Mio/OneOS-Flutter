@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import '../controllers/working_hour_controller.dart';
-import '../models/working_hour_model.dart';
+import '../../controllers/working_hour_controller.dart';
+import '../../models/working_hour_model.dart';
 import 'working_hours_reports_page.dart';
 
 class WorkingHoursPage extends StatelessWidget {

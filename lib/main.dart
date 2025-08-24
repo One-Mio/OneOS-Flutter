@@ -4,7 +4,7 @@ import 'package:get/get.dart';
 import 'services/pocketbase_service.dart';
 import 'controllers/auth_controller.dart';
 import 'pages/home_page.dart';
-import 'pages/login_page.dart';
+import 'pages/other/login_page.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
