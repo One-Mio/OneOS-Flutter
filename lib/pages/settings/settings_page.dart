@@ -433,9 +433,9 @@ class SettingsPage extends StatelessWidget {
             SizedBox(height: 12),
             Text('应用版本: 1.0.0'),
             SizedBox(height: 8),
-            Text('Flutter版本: 3.24.4'),
+            Text('Flutter版本: 3.35.1'),
             SizedBox(height: 8),
-            Text('Dart版本: 3.5.4'),
+            Text('Dart版本: 3.9.0'),
             SizedBox(height: 16),
             Text(
               '基于Flutter开发的现代化移动应用',

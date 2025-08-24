@@ -4,7 +4,6 @@ import 'package:flutter_svg/flutter_svg.dart';
 import '../../controllers/account_controller.dart';
 import '../../controllers/category_controller.dart';
 import '../../controllers/account_book_controller.dart';
-import './account_book_page.dart';
 import 'add_account_book_page.dart';
 
 class FinanceMainPage extends StatefulWidget {
@@ -40,23 +39,42 @@ class _FinanceMainPageState extends State<FinanceMainPage> {
 class FinanceDashboard extends StatelessWidget {
   const FinanceDashboard({super.key});
 
+  Future<void> _refreshData() async {
+    final accountBookController = Get.find<AccountBookController>();
+    final accountController = Get.find<AccountController>();
+    
+    // 刷新账本数据
+    await accountBookController.loadAccountBooks(refresh: true);
+    // 刷新账户数据
+    await accountController.loadAccounts(refresh: true);
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xFFF8F9FA),
       appBar: _buildAppBar(),
       floatingActionButton: _buildFloatingActionButton(),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          children: [
-            _buildBalanceCard(),
-            const SizedBox(height: 20),
-            _buildQuickStats(),
-            const SizedBox(height: 20),
-            _buildRecordsList(),
-          ],
-        ),
+      body: Column(
+        children: [
+          // 固定的总资产卡片
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
+            child: _buildBalanceCard(),
+          ),
+          const SizedBox(height: 12),
+          // 可滑动的记录列表
+          Expanded(
+            child: RefreshIndicator(
+              onRefresh: _refreshData,
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                physics: const AlwaysScrollableScrollPhysics(),
+                child: _buildRecordsList(context),
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -106,7 +124,7 @@ class FinanceDashboard extends StatelessWidget {
   Widget _buildBalanceCard() {
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.all(24),
+      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         gradient: const LinearGradient(
           colors: [Color(0xFF007AFF), Color(0xFF5856D6)],
@@ -129,11 +147,11 @@ class FinanceDashboard extends StatelessWidget {
             '总资产',
             style: TextStyle(
               color: Colors.white70,
-              fontSize: 16,
+              fontSize: 14,
               fontWeight: FontWeight.w500,
             ),
           ),
-          const SizedBox(height: 8),
+          const SizedBox(height: 6),
           GetBuilder<AccountController>(
             builder: (controller) {
               if (controller.isLoading.value && controller.accounts.isEmpty) {
@@ -149,16 +167,16 @@ class FinanceDashboard extends StatelessWidget {
               double totalBalance = controller.accounts
                   .fold(0.0, (sum, account) => sum + account.initialAmount);
               return Text(
-                '¥${totalBalance.toStringAsFixed(2)}',
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 36,
-                  fontWeight: FontWeight.bold,
-                ),
-              );
+                  '¥${totalBalance.toStringAsFixed(2)}',
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 28,
+                    fontWeight: FontWeight.bold,
+                  ),
+                );
             },
           ),
-          const SizedBox(height: 20),
+          const SizedBox(height: 12),
           Row(
             children: [
               Expanded(
@@ -182,7 +200,7 @@ class FinanceDashboard extends StatelessWidget {
           title,
           style: const TextStyle(
             color: Colors.white70,
-            fontSize: 14,
+            fontSize: 12,
           ),
         ),
         const SizedBox(height: 4),
@@ -213,7 +231,7 @@ class FinanceDashboard extends StatelessWidget {
             '¥${amount.toStringAsFixed(2)}',
             style: const TextStyle(
               color: Colors.white,
-              fontSize: 18,
+              fontSize: 16,
               fontWeight: FontWeight.w600,
             ),
           );
@@ -222,72 +240,7 @@ class FinanceDashboard extends StatelessWidget {
     );
   }
 
-  Widget _buildQuickStats() {
-    return Container(
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 10,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Text(
-            '本月统计',
-            style: TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.w600,
-              color: Colors.black87,
-            ),
-          ),
-          const SizedBox(height: 16),
-          Obx(() {
-            final controller = Get.find<AccountBookController>();
-            if (controller.isLoading.value) {
-              return const Center(
-                child: CircularProgressIndicator(),
-              );
-            }
-            
-            final currentMonth = controller.currentMonth.value;
-            final incomeRecords = controller.accountBooks.where((t) => 
-                t.amount > 0 && 
-                t.accountBookDate.year == currentMonth.year &&
-                t.accountBookDate.month == currentMonth.month
-            ).toList();
-            final expenseRecords = controller.accountBooks.where((t) => 
-                t.amount < 0 && 
-                t.accountBookDate.year == currentMonth.year &&
-                t.accountBookDate.month == currentMonth.month
-            ).toList();
-            
-            double monthlyIncome = incomeRecords.fold(0.0, (sum, t) => sum + t.amount);
-            double monthlyExpense = expenseRecords.fold(0.0, (sum, t) => sum + t.amount.abs());
-            double netIncome = monthlyIncome - monthlyExpense;
-            
-            return Column(
-              children: [
-                _buildStatRow('总收入', monthlyIncome, Colors.green),
-                const SizedBox(height: 12),
-                _buildStatRow('总支出', monthlyExpense, Colors.red),
-                const SizedBox(height: 12),
-                _buildStatRow('净收入', netIncome, netIncome >= 0 ? Colors.blue : Colors.orange),
-                const SizedBox(height: 16),
-                _buildProgressBar(monthlyIncome, monthlyExpense),
-              ],
-            );
-          }),
-        ],
-      ),
-    );
-  }
+
 
   Widget _buildStatRow(String label, double amount, Color color) {
     return Row(
@@ -363,173 +316,136 @@ class FinanceDashboard extends StatelessWidget {
     );
   }
 
-  Widget _buildRecordsList() {
-    return Container(
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 10,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Padding(
-            padding: EdgeInsets.all(20),
-            child: Text(
-              '最近记录',
-              style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.w600,
-                color: Colors.black87,
-              ),
+  Widget _buildRecordsList(BuildContext context) {
+    return Obx(() {
+      final controller = Get.find<AccountBookController>();
+      
+      if (controller.isLoading.value && controller.accountBooks.isEmpty) {
+        return _buildSkeletonLoader();
+      }
+      
+      final currentMonth = controller.currentMonth.value;
+      final monthlyAccountBooks = controller.accountBooks.where((accountBook) {
+        return accountBook.accountBookDate.year == currentMonth.year &&
+               accountBook.accountBookDate.month == currentMonth.month;
+      }).toList();
+      
+      if (monthlyAccountBooks.isEmpty && !controller.isLoading.value) {
+        return const Padding(
+          padding: EdgeInsets.all(40),
+          child: Center(
+            child: Column(
+              children: [
+                Icon(
+                  Icons.receipt_long_outlined,
+                  size: 48,
+                  color: Colors.grey,
+                ),
+                SizedBox(height: 12),
+                Text(
+                  '本月暂无记账记录',
+                  style: TextStyle(
+                    color: Colors.grey,
+                    fontSize: 16,
+                  ),
+                ),
+              ],
             ),
           ),
-          Obx(() {
-            final controller = Get.find<AccountBookController>();
-            
-            if (controller.isLoading.value && controller.accountBooks.isEmpty) {
-              return _buildSkeletonLoader();
-            }
-            
-            final currentMonth = controller.currentMonth.value;
-            final monthlyAccountBooks = controller.accountBooks.where((accountBook) {
-              return accountBook.accountBookDate.year == currentMonth.year &&
-                     accountBook.accountBookDate.month == currentMonth.month;
-            }).toList();
-            
-            if (monthlyAccountBooks.isEmpty && !controller.isLoading.value) {
-              return const Padding(
-                padding: EdgeInsets.all(40),
-                child: Center(
-                  child: Column(
+        );
+      }
+      
+      // 按日期分组并排序
+      Map<String, List<dynamic>> groupedAccountBooks = {};
+      for (var accountBook in monthlyAccountBooks) {
+        String dateKey = '${accountBook.accountBookDate.year}-${accountBook.accountBookDate.month.toString().padLeft(2, '0')}-${accountBook.accountBookDate.day.toString().padLeft(2, '0')}';
+        if (!groupedAccountBooks.containsKey(dateKey)) {
+          groupedAccountBooks[dateKey] = [];
+        }
+        groupedAccountBooks[dateKey]!.add(accountBook);
+      }
+      
+      var sortedDates = groupedAccountBooks.keys.toList()
+        ..sort((a, b) => b.compareTo(a));
+      
+      return Column(
+        children: sortedDates.map((dateKey) {
+          final accountBooks = groupedAccountBooks[dateKey]!;
+          final date = DateTime.parse(dateKey);
+          final dayIncome = accountBooks.where((t) => t.amount > 0).fold(0.0, (sum, t) => sum + t.amount);
+          final dayExpense = accountBooks.where((t) => t.amount < 0).fold(0.0, (sum, t) => sum + t.amount.abs());
+          
+          return Container(
+            margin: const EdgeInsets.only(bottom: 16),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(16),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.05),
+                  blurRadius: 10,
+                  offset: const Offset(0, 2),
+                ),
+              ],
+            ),
+            child: Column(
+              children: [
+                // 日期头部
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                  decoration: BoxDecoration(
+                    color: Colors.grey.shade50,
+                    borderRadius: const BorderRadius.only(
+                      topLeft: Radius.circular(16),
+                      topRight: Radius.circular(16),
+                    ),
+                  ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Icon(
-                        Icons.receipt_long_outlined,
-                        size: 48,
-                        color: Colors.grey,
-                      ),
-                      SizedBox(height: 12),
                       Text(
-                        '本月暂无记账记录',
-                        style: TextStyle(
-                          color: Colors.grey,
+                        '${date.month}月${date.day}日',
+                        style: const TextStyle(
                           fontSize: 16,
+                          fontWeight: FontWeight.w600,
+                          color: Colors.black87,
                         ),
+                      ),
+                      Row(
+                        children: [
+                          if (dayIncome > 0) ...[
+                            Text(
+                              '+¥${dayIncome.toStringAsFixed(2)}',
+                              style: const TextStyle(
+                                fontSize: 14,
+                                color: Colors.green,
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                          ],
+                          if (dayExpense > 0)
+                            Text(
+                              '-¥${dayExpense.toStringAsFixed(2)}',
+                              style: const TextStyle(
+                                fontSize: 14,
+                                color: Colors.red,
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                        ],
                       ),
                     ],
                   ),
                 ),
-              );
-            }
-            
-            // 按日期分组并排序
-            Map<String, List<dynamic>> groupedAccountBooks = {};
-            for (var accountBook in monthlyAccountBooks) {
-              String dateKey = '${accountBook.accountBookDate.year}-${accountBook.accountBookDate.month.toString().padLeft(2, '0')}-${accountBook.accountBookDate.day.toString().padLeft(2, '0')}';
-              if (!groupedAccountBooks.containsKey(dateKey)) {
-                groupedAccountBooks[dateKey] = [];
-              }
-              groupedAccountBooks[dateKey]!.add(accountBook);
-            }
-            
-            var sortedDates = groupedAccountBooks.keys.toList()
-              ..sort((a, b) => b.compareTo(a));
-            
-            return Column(
-              children: sortedDates.take(5).map((dateKey) {
-                final accountBooks = groupedAccountBooks[dateKey]!;
-                final date = DateTime.parse(dateKey);
-                final dayIncome = accountBooks.where((t) => t.amount > 0).fold(0.0, (sum, t) => sum + t.amount);
-                final dayExpense = accountBooks.where((t) => t.amount < 0).fold(0.0, (sum, t) => sum + t.amount.abs());
-                
-                return Column(
-                  children: [
-                    // 日期头部
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-                      decoration: BoxDecoration(
-                        color: Colors.grey.shade50,
-                        border: Border(
-                          bottom: BorderSide(color: Colors.grey.shade200),
-                        ),
-                      ),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Text(
-                            '${date.month}月${date.day}日',
-                            style: const TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.w600,
-                              color: Colors.black87,
-                            ),
-                          ),
-                          Row(
-                            children: [
-                              if (dayIncome > 0) ...[
-                                Text(
-                                  '+¥${dayIncome.toStringAsFixed(2)}',
-                                  style: const TextStyle(
-                                    fontSize: 14,
-                                    color: Colors.green,
-                                    fontWeight: FontWeight.w500,
-                                  ),
-                                ),
-                                const SizedBox(width: 8),
-                              ],
-                              if (dayExpense > 0)
-                                Text(
-                                  '-¥${dayExpense.toStringAsFixed(2)}',
-                                  style: const TextStyle(
-                                    fontSize: 14,
-                                    color: Colors.red,
-                                    fontWeight: FontWeight.w500,
-                                  ),
-                                ),
-                            ],
-                          ),
-                        ],
-                      ),
-                    ),
-                    // 交易列表
-                    ...accountBooks.map((accountBook) => _buildRecordItem(accountBook)),
-                  ],
-                );
-              }).toList(),
-            );
-          }),
-          // 查看更多按钮
-          Padding(
-            padding: const EdgeInsets.all(20),
-            child: SizedBox(
-              width: double.infinity,
-              child: OutlinedButton(
-                onPressed: () => Get.to(() => const AccountBookPage()),
-                style: OutlinedButton.styleFrom(
-                  padding: const EdgeInsets.symmetric(vertical: 12),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                ),
-                child: const Text(
-                  '查看全部记录',
-                  style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-              ),
+                // 交易列表
+                ...accountBooks.map((accountBook) => _buildRecordItem(accountBook)),
+              ],
             ),
-          ),
-        ],
-      ),
-    );
+          );
+        }).toList(),
+      );
+    });
   }
 
   Widget _buildRecordItem(dynamic accountBook) {
@@ -682,4 +598,7 @@ class FinanceDashboard extends StatelessWidget {
       )),
     );
   }
+
+  // 显示当前月份的所有记录
+
 }
