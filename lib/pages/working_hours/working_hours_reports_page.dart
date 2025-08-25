@@ -34,16 +34,16 @@ class _WorkingHoursReportsPageState extends State<WorkingHoursReportsPage>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.grey.shade50,
+      backgroundColor: const Color(0xFFF8F9FA),
       appBar: AppBar(
-        backgroundColor: Colors.blue.shade300,
-        foregroundColor: Colors.white,
+        backgroundColor: Colors.white,
+        foregroundColor: Colors.black87,
         elevation: 0,
         title: TabBar(
           controller: _tabController,
-          indicatorColor: Colors.white,
-          labelColor: Colors.white,
-          unselectedLabelColor: Colors.white70,
+          indicatorColor: Colors.black87,
+          labelColor: Colors.black87,
+          unselectedLabelColor: Colors.black54,
           tabs: const [
             Tab(text: '月度报表', icon: Icon(Icons.calendar_month)),
             Tab(text: '年度报表', icon: Icon(Icons.calendar_today)),

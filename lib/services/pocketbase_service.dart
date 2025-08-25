@@ -5,6 +5,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../models/account_model.dart';
 import '../models/category_model.dart';
 import '../models/account_book_model.dart';
+import '../models/endowment_insurance_model.dart';
 
 class PocketBaseService extends GetxService {
   late PocketBase pb;
@@ -365,6 +366,144 @@ class PocketBaseService extends GetxService {
     } catch (e) {
       errorMessage.value = '删除记账记录失败: $e';
       return false;
+    }
+  }
+
+  // ==================== 养老保险相关API ====================
+  
+  // 获取养老保险记录列表
+  Future<EndowmentInsuranceListResponse?> getEndowmentInsurance({int page = 1, int perPage = 30}) async {
+    try {
+      final result = await pb.collection('endowment_insurance').getList(
+        page: page,
+        perPage: perPage,
+        sort: '-contribution_year_and_month',
+      );
+      return EndowmentInsuranceListResponse.fromJson(result.toJson());
+    } catch (e) {
+      errorMessage.value = '获取养老保险记录失败: $e';
+      return null;
+    }
+  }
+
+  // 创建养老保险记录
+  Future<EndowmentInsuranceModel?> createEndowmentInsurance({
+    required String cityOfInsuranceParticipation,
+    required String unitName,
+    required double contributionBase,
+    required double personalContribution,
+    required double unitContribution,
+    required String contributionYearAndMonth,
+  }) async {
+    try {
+      final result = await pb.collection('endowment_insurance').create(body: {
+        'city_of_insurance_participation': cityOfInsuranceParticipation,
+        'unit_name': unitName,
+        'contribution_base': contributionBase,
+        'personal_contribution': personalContribution,
+        'unit_contribution': unitContribution,
+        'contribution_year_and_month': contributionYearAndMonth,
+      });
+      return EndowmentInsuranceModel.fromJson(result.toJson());
+    } catch (e) {
+      errorMessage.value = '创建养老保险记录失败: $e';
+      return null;
+    }
+  }
+
+  // 更新养老保险记录
+  Future<EndowmentInsuranceModel?> updateEndowmentInsurance(
+    String id, {
+    String? cityOfInsuranceParticipation,
+    String? unitName,
+    double? contributionBase,
+    double? personalContribution,
+    double? unitContribution,
+    String? contributionYearAndMonth,
+  }) async {
+    try {
+      final body = <String, dynamic>{};
+      if (cityOfInsuranceParticipation != null) body['city_of_insurance_participation'] = cityOfInsuranceParticipation;
+      if (unitName != null) body['unit_name'] = unitName;
+      if (contributionBase != null) body['contribution_base'] = contributionBase;
+      if (personalContribution != null) body['personal_contribution'] = personalContribution;
+      if (unitContribution != null) body['unit_contribution'] = unitContribution;
+      if (contributionYearAndMonth != null) body['contribution_year_and_month'] = contributionYearAndMonth;
+      
+      final result = await pb.collection('endowment_insurance').update(id, body: body);
+      return EndowmentInsuranceModel.fromJson(result.toJson());
+    } catch (e) {
+      errorMessage.value = '更新养老保险记录失败: $e';
+      return null;
+    }
+  }
+
+  // 删除养老保险记录
+  Future<bool> deleteEndowmentInsurance(String id) async {
+    try {
+      await pb.collection('endowment_insurance').delete(id);
+      return true;
+    } catch (e) {
+      errorMessage.value = '删除养老保险记录失败: $e';
+      return false;
+    }
+  }
+
+  // 获取养老保险统计数据（使用视图API）
+  Future<Map<String, dynamic>?> getEndowmentInsuranceTotal() async {
+    try {
+      final result = await pb.collection('endowment_insurance_total').getList(
+        page: 1,
+        perPage: 30,
+      );
+      
+      if (result.items.isNotEmpty) {
+        final item = result.items.first;
+        final data = item.toJson();
+        
+        // 解析JSON字符串中的数值
+        double totalPersonal = 0.0;
+        double totalUnit = 0.0;
+        
+        if (data['total_personal_contribution'] != null) {
+          final personalStr = data['total_personal_contribution'].toString();
+          totalPersonal = double.tryParse(personalStr) ?? 0.0;
+        }
+        
+        if (data['total_unit_contribution'] != null) {
+          final unitStr = data['total_unit_contribution'].toString();
+          totalUnit = double.tryParse(unitStr) ?? 0.0;
+        }
+        
+        // 获取城市缴费月数
+        int shenzhenCount = 0;
+        int dongguanCount = 0;
+        
+        if (data['shenzhen_count'] != null) {
+          shenzhenCount = int.tryParse(data['shenzhen_count'].toString()) ?? 0;
+        }
+        
+        if (data['dongguan_count'] != null) {
+          dongguanCount = int.tryParse(data['dongguan_count'].toString()) ?? 0;
+        }
+        
+        return {
+          'total_personal_contribution': totalPersonal,
+          'total_unit_contribution': totalUnit,
+          'shenzhen_count': shenzhenCount,
+          'dongguan_count': dongguanCount,
+        };
+      }
+      
+      return {
+        'total_personal_contribution': 0.0,
+        'total_unit_contribution': 0.0,
+        'shenzhen_count': 0,
+        'dongguan_count': 0,
+      };
+    } catch (e) {
+      errorMessage.value = '获取养老保险统计数据失败: $e';
+      return null;
     }
   }
 }

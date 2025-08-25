@@ -13,7 +13,7 @@ class WorkingHoursPage extends StatelessWidget {
     final WorkingHourController controller = Get.put(WorkingHourController());
 
     return Scaffold(
-      backgroundColor: Colors.grey.shade50,
+      backgroundColor: const Color(0xFFF8F9FA),
       appBar: AppBar(
         centerTitle: true,
         title: Obx(() => Row(
@@ -50,8 +50,8 @@ class WorkingHoursPage extends StatelessWidget {
             ),
           ],
         )),
-        backgroundColor: Colors.blue.shade300,
-        foregroundColor: Colors.white,
+        backgroundColor: Colors.white,
+        foregroundColor: Colors.black87,
         elevation: 0,
         actions: [
           IconButton(

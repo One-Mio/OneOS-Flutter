@@ -9,24 +9,15 @@ class PayStubDetailPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: const Color(0xFFF8F9FA),
       appBar: AppBar(
         title: const Text('薪资单详情'),
-        backgroundColor: Colors.blue.shade600,
-        foregroundColor: Colors.white,
+        backgroundColor: Colors.white,
+        foregroundColor: Colors.black87,
         elevation: 0,
       ),
       body: Container(
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [
-              Colors.blue.shade600,
-              Colors.blue.shade50,
-            ],
-            stops: const [0.0, 0.3],
-          ),
-        ),
+        color: const Color(0xFFF8F9FA),
         child: SingleChildScrollView(
           child: Column(
             children: [

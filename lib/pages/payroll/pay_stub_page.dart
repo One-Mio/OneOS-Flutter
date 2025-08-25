@@ -13,6 +13,7 @@ class PayStubPage extends StatelessWidget {
     final isLargeScreen = MediaQuery.of(context).size.width > 800;
 
     return Scaffold(
+      backgroundColor: const Color(0xFFF8F9FA),
       appBar: _buildAppBar(context, controller, isLargeScreen),
       body: Obx(() {
         if (controller.isLoading.value && controller.payStubs.isEmpty) {
@@ -89,15 +90,15 @@ class PayStubPage extends StatelessWidget {
           fontWeight: FontWeight.w600,
         ),
       ),
-      backgroundColor: isLargeScreen ? Colors.blue.shade700 : Colors.blue.shade600,
-      foregroundColor: Colors.white,
+      backgroundColor: Colors.white,
+      foregroundColor: Colors.black87,
       toolbarHeight: isLargeScreen ? 70 : 56,
       actions: [
         if (isLargeScreen) ...[
           TextButton.icon(
             onPressed: () => controller.refreshPayStubs(),
-            icon: const Icon(Icons.refresh, color: Colors.white),
-            label: const Text('刷新数据', style: TextStyle(color: Colors.white)),
+            icon: const Icon(Icons.refresh, color: Colors.black87),
+            label: const Text('刷新数据', style: TextStyle(color: Colors.black87)),
           ),
           const SizedBox(width: 16),
         ] else

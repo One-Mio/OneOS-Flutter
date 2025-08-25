@@ -14,6 +14,7 @@ import './other/phone_page.dart';
 import './other/bank_card_page.dart';
 import './accounting/finance_main_page.dart';
 import './games/fast_three_game_page.dart';
+import './endowment_insurance/endowment_insurance_page.dart';
 
 class HomePage extends StatelessWidget {
   const HomePage({super.key});
@@ -67,6 +68,12 @@ class HomePage extends StatelessWidget {
       icon: Icons.casino,
       color: const Color(0xFFFF3B30),
       onTap: () => Get.to(() => const FastThreeGamePage()),
+    ),
+    AppModel(
+      name: '养老保险',
+      icon: Icons.account_balance,
+      color: const Color(0xFF32D74B),
+      onTap: () => Get.to(() => const EndowmentInsurancePage()),
     ),
   ];
 
