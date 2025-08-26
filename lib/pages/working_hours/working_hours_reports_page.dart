@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:fl_chart/fl_chart.dart';
 import '../../controllers/working_hour_controller.dart';
-import '../../models/working_hour_model.dart';
 
 class WorkingHoursReportsPage extends StatefulWidget {
   const WorkingHoursReportsPage({Key? key}) : super(key: key);
@@ -1092,11 +1091,6 @@ class _WorkingHoursReportsPageState extends State<WorkingHoursReportsPage>
     );
   }
 
-  // 显示指定年份的月份选择器（已废弃，保留兼容性）
-  void _showMonthPickerForYear(int year) {
-    // 直接调用新的月份选择器
-    _showMonthPicker();
-  }
 
   // 获取当前选中月份的数据
   Map<String, dynamic> _getCurrentMonthData() {

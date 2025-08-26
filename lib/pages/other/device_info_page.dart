@@ -31,7 +31,7 @@ class _DeviceInfoPageState extends State<DeviceInfoPage> {
           '设备型号': '${androidInfo.brand} ${androidInfo.model}',
           'Android版本': 'Android ${androidInfo.version.release}',
           'API级别': 'API ${androidInfo.version.sdkInt}',
-          '处理器': androidInfo.hardware ?? '未知',
+          '处理器': androidInfo.hardware,
           '制造商': androidInfo.manufacturer,
           '设备ID': androidInfo.id,
           '系统版本': androidInfo.version.incremental,

@@ -252,13 +252,13 @@ class BankCardPage extends StatelessWidget {
                         Text(
                           '余额',
                           style: TextStyle(
-                            color: logoColor.withOpacity(0.8),
+                            color: logoColor.withValues(alpha: 0.8),
                             fontSize: 12,
                             fontWeight: FontWeight.w500,
                           ),
                         ),
                         Text(
-                          balance!,
+                          balance,
                           style: TextStyle(
                             color: logoColor,
                             fontSize: 16,
@@ -295,11 +295,11 @@ class BankCardPage extends StatelessWidget {
                             Container(
                               padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                               decoration: BoxDecoration(
-                                color: Colors.white.withOpacity(0.3),
+                                color: Colors.white.withValues(alpha: 0.3),
                                 borderRadius: BorderRadius.circular(4),
                               ),
                               child: Text(
-                                accountType!,
+                                accountType,
                                 style: TextStyle(
                                   color: logoColor,
                                   fontSize: 10,
@@ -328,9 +328,9 @@ class BankCardPage extends StatelessWidget {
                           const SizedBox(height: 4),
                           if (branchName != null)
                             Text(
-                              branchName!,
+                              branchName,
                               style: TextStyle(
-                                color: logoColor.withOpacity(0.8),
+                                color: logoColor.withValues(alpha: 0.8),
                                 fontSize: 10,
                                 fontWeight: FontWeight.w400,
                               ),

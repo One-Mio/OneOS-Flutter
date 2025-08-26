@@ -10,7 +10,7 @@ void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
   // 初始化PocketBase服务
-  final pbService = await Get.put(PocketBaseService()).init();
+  await Get.put(PocketBaseService()).init();
 
   // 初始化认证控制器
   Get.put(AuthController());

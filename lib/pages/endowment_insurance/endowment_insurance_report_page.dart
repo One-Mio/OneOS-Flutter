@@ -2,7 +2,6 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../../controllers/endowment_insurance_controller.dart';
-import '../../models/endowment_insurance_model.dart';
 
 class EndowmentInsuranceReportPage extends StatelessWidget {
   const EndowmentInsuranceReportPage({super.key});
@@ -54,7 +53,7 @@ class EndowmentInsuranceReportPage extends StatelessWidget {
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: const Color(0xFF667eea).withOpacity(0.3),
+            color: const Color(0xFF667eea).withValues(alpha: 0.3),
             blurRadius: 12,
             offset: const Offset(0, 6),
           ),
@@ -68,7 +67,7 @@ class EndowmentInsuranceReportPage extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.2),
+                  color: Colors.white.withValues(alpha: 0.2),
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: const Icon(
@@ -293,12 +292,12 @@ class EndowmentInsuranceReportPage extends StatelessWidget {
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
               gradient: LinearGradient(
-                colors: [const Color(0xFF667eea).withOpacity(0.1), const Color(0xFF764ba2).withOpacity(0.1)],
+                colors: [const Color(0xFF667eea).withValues(alpha: 0.1), const Color(0xFF764ba2).withValues(alpha: 0.1)],
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
               ),
               borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: const Color(0xFF667eea).withOpacity(0.3)),
+              border: Border.all(color: const Color(0xFF667eea).withValues(alpha: 0.3)),
             ),
             child: Column(
               children: [
@@ -347,10 +346,10 @@ class EndowmentInsuranceReportPage extends StatelessWidget {
                 Container(
                   padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
-                    color: totalNeeded == 0 ? Colors.green.withOpacity(0.1) : Colors.orange.withOpacity(0.1),
+                    color: totalNeeded == 0 ? Colors.green.withValues(alpha: 0.1) : Colors.orange.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(8),
                     border: Border.all(
-                      color: totalNeeded == 0 ? Colors.green.withOpacity(0.3) : Colors.orange.withOpacity(0.3),
+                      color: totalNeeded == 0 ? Colors.green.withValues(alpha: 0.3) : Colors.orange.withValues(alpha: 0.3),
                     ),
                   ),
                   child: Row(
@@ -402,9 +401,9 @@ class EndowmentInsuranceReportPage extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.1),
+        color: color.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: color.withOpacity(0.3)),
+        border: Border.all(color: color.withValues(alpha: 0.3)),
       ),
       child: Column(
         children: [
@@ -416,7 +415,7 @@ class EndowmentInsuranceReportPage extends StatelessWidget {
                   Container(
                     padding: const EdgeInsets.all(8),
                     decoration: BoxDecoration(
-                      color: color.withOpacity(0.2),
+                      color: color.withValues(alpha: 0.2),
                       borderRadius: BorderRadius.circular(8),
                     ),
                     child: Icon(
@@ -470,10 +469,10 @@ class EndowmentInsuranceReportPage extends StatelessWidget {
           Container(
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
-              color: canReceivePension ? Colors.green.withOpacity(0.1) : Colors.orange.withOpacity(0.1),
+              color: canReceivePension ? Colors.green.withValues(alpha: 0.1) : Colors.orange.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(8),
               border: Border.all(
-                color: canReceivePension ? Colors.green.withOpacity(0.3) : Colors.orange.withOpacity(0.3),
+                color: canReceivePension ? Colors.green.withValues(alpha: 0.3) : Colors.orange.withValues(alpha: 0.3),
               ),
             ),
             child: Row(
@@ -516,72 +515,5 @@ class EndowmentInsuranceReportPage extends StatelessWidget {
     );
   }
   
-  Widget _buildCityStatItem(String city, int months, IconData icon, Color color) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: color.withOpacity(0.1),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: color.withOpacity(0.3)),
-      ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Row(
-            children: [
-              Container(
-                padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(
-                  color: color.withOpacity(0.2),
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: Icon(
-                  icon,
-                  color: color,
-                  size: 18,
-                ),
-              ),
-              const SizedBox(width: 12),
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    city,
-                    style: const TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
-                      color: Color(0xFF2D3748),
-                    ),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    '缴费月数',
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: Colors.grey[600],
-                    ),
-                  ),
-                ],
-              ),
-            ],
-          ),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-            decoration: BoxDecoration(
-              color: color,
-              borderRadius: BorderRadius.circular(20),
-            ),
-            child: Text(
-               '${months}个月',
-               style: const TextStyle(
-                 fontSize: 14,
-                 fontWeight: FontWeight.bold,
-                 color: Colors.white,
-               ),
-             ),
-           ),
-         ],
-       ),
-     );
-   }
+
 }

@@ -1,10 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'dart:io' show Platform;
-import '../controllers/auth_controller.dart';
-import '../controllers/account_controller.dart';
-import '../controllers/category_controller.dart';
-import '../controllers/account_book_controller.dart';
 import '../models/app_model.dart';
 import './working_hours/working_hours_page.dart';
 import './settings/settings_page.dart';
@@ -12,6 +7,7 @@ import './payroll/pay_stub_page.dart';
 import './qr_code/qr_code_page.dart';
 import './other/phone_page.dart';
 import './other/bank_card_page.dart';
+import './other/password_generator_page.dart';
 import './accounting/finance_main_page.dart';
 import './games/fast_three_game_page.dart';
 import './endowment_insurance/endowment_insurance_page.dart';
@@ -75,6 +71,12 @@ class HomePage extends StatelessWidget {
       color: const Color(0xFF32D74B),
       onTap: () => Get.to(() => const EndowmentInsurancePage()),
     ),
+    AppModel(
+      name: '密码生成器',
+      icon: Icons.lock,
+      color: const Color(0xFFFF6B35),
+      onTap: () => Get.to(() => const PasswordGeneratorPage()),
+    ),
   ];
 
   // Dock栏应用
@@ -113,10 +115,15 @@ class HomePage extends StatelessWidget {
     return Scaffold(
       body: Container(
         decoration: const BoxDecoration(
-          image: DecorationImage(
-            image: AssetImage('assets/images/phone _wallpapers.jpeg'),
-            fit: BoxFit.cover,
-          ),
+          gradient: LinearGradient(
+             begin: Alignment.topCenter,
+             end: Alignment.bottomCenter,
+             colors: [
+               Color(0xFF7C3AED), // 深紫色
+               Color(0xFFA855F7), // 紫色
+               Color(0xFFEC4899), // 粉色
+             ],
+           ),
         ),
         child: SafeArea(
           child: Column(
